@@ -68,3 +68,18 @@
     background: none;
     box-shadow: none;
 }
+
+#threshold_control{
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#threshold_control *{
+    margin: 0 1%;
+}
+
+#th{
+    display: none;
+}

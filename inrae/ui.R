@@ -8,7 +8,6 @@ suppressMessages(library(tidyverse))
 
 ################################# UI ###################################
 
-
 shinyUI(bootstrapPage(
     theme = "styles.css",
     useShinyjs(),
@@ -33,7 +32,7 @@ shinyUI(bootstrapPage(
                 width = "100%",
                 options = list(
                     placeholder = 'concept ID',
-                    maxOptions = 10,
+                    maxOptions = 5,
                     create = FALSE
                 )
             ),
@@ -45,7 +44,7 @@ shinyUI(bootstrapPage(
                 width = "100%",
                 options = list(
                     placeholder = 'list of concept',
-                    maxOptions = 50,
+                    maxOptions = 5,
                     create = FALSE
                 )
             )
@@ -66,7 +65,7 @@ shinyUI(bootstrapPage(
                 width = "100%",
                 options = list(
                     placeholder = 'concept ID',
-                    maxOptions = 10,
+                    maxOptions = 5,
                     create = FALSE
                 )
             ),
@@ -78,7 +77,7 @@ shinyUI(bootstrapPage(
                 width = "100%",
                 options = list(
                     placeholder = 'list of concept',
-                    maxOptions = 50,
+                    maxOptions = 5,
                     create = FALSE
                 )
             )
@@ -153,6 +152,23 @@ shinyUI(bootstrapPage(
         uiOutput("UI_path_A", class = "nodepath"),
         sankeyNetworkOutput("relationDiagram", width = "40%"),
         uiOutput("UI_path_B", class = "nodepath")
+    ),
+    
+    checkboxInput("th", NULL, value = FALSE),
+    conditionalPanel(
+        condition = "input.th == true",
+        id = "threshold_control",
+        p("Threshold: "),
+        sliderInput(
+            "threshold_slide",
+            label = NULL,
+            min = 1, max = 100,
+            value = c(40, 60)
+        ),
+        actionButton(
+            "reload",
+            "Reload"
+        )
     ),
     
     conditionalPanel(

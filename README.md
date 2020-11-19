@@ -38,7 +38,7 @@ And transfer the .tar file to the server
 On the server 
 ```bash
 sudo docker load < inrae.tar
-sudo docker run -it -d --rm -v /absolute/path/to/data/:/srv/shiny-server/inrae/inrae/data -p 80:3838 --name inrae inrae/onto:latest
+sudo docker run -it -d --rm -v /absolute/path/to/data/:/srv/shiny-server/data -p 80:3838 --name inrae inrae/onto:latest
 ```
 
 * /absolute/path/to/data/ must be the path to data folder which contains all `.obo` files.

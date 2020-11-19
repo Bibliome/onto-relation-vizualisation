@@ -36,7 +36,7 @@ RUN R -e 'devtools::install_github("fbreitwieser/sankeyD3")'
     
 RUN mkdir -p /srv/shiny-server/inrae
 COPY . /srv/shiny-server/inrae
-RUN mkdir /srv/shiny-server/inrae/inrae/data
+RUN mkdir /srv/shiny-server/data
 
 RUN cp /srv/shiny-server/inrae/docker/shiny-server.conf /etc/shiny-server/
         

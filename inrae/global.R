@@ -13,12 +13,16 @@ source("scripts/appendix.R")
 
 ############################# VARIABLES ################################
 
- concept <<- list(
-   habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
-   phenotype = get_ontology("data/BioNLP-OST+EnovFood-Phenotype.obo"),
-   use = get_ontology("data/Use_V2.obo"),
-   taxon = get_ontology("data/microorganisms.obo")
- )
+concept <<- list(
+  habitat = get_ontology("../../data/BioNLP-OST+EnovFood-Habitat.obo"),
+  phenotype = get_ontology("../../data/BioNLP-OST+EnovFood-Phenotype.obo"),
+  use = get_ontology("../../data/Use_V2.obo"),
+  taxon = get_ontology("../../data/microorganisms.obo")
+)
+
+
+concept_choices <- concept %>%
+  lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))])
 
 ontobiotope <<- c("habitat", "phenotype", "use")
 
@@ -167,8 +171,7 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   
   
   request <- GET(url = main, query = query)
-  print(request)
-  
+
   response <- FALSE
   data <- tibble(
     taxid = character(),
@@ -228,9 +231,6 @@ get_join_relations <- function(left, right, join, source = '', qps = FALSE){
   )
   
   request <- GET(url = main, query = query)
-  
-  print(request)
-  
   response <- FALSE
   data <- tibble(
     leftType = character(),
@@ -275,19 +275,12 @@ aggregate_value <- function(taxid, obtid, type, source = '', qps = F, doc = T){
   #' docs: (bool) aggregate on docs
   #' :return: (tibble) value
 
-  start_time <- proc.time()
-  
   request <- get_relations(taxid, obtid, type, source, qps) %>% pull(docs)
   if(doc){
     aggregation <- tibble(value = request %>% lengths %>% sum)
   } else {
     aggregation <- tibble(value = request %>% length)
   }
-
-  end_time <- proc.time()
-  time <- end_time - start_time
-  print("Computing time aggregate_value: ")
-  print(time)
   
   return(aggregation)
 }
@@ -299,9 +292,7 @@ join_value <- function(lt, lid, rt, rid, jt, jid = NULL, source = '', qps = F, d
   #' base: (tibble) df with all relations
   #' *: left, right and join | type and id
   #' docs: (bool) aggregate on docs
-  #' :return: (tibble) joind, leftValue, rightValue
-
-  start_time <- proc.time()
+  #' :return: (tibble) joind, leftValue, rightValue, value
   
   request <- get_join_relations(
     list(id = lid, cpt = lt),
@@ -315,22 +306,19 @@ join_value <- function(lt, lid, rt, rid, jt, jid = NULL, source = '', qps = F, d
         mutate(
           .,
           leftValue = lengths(leftDocs),
-          rightValue = lengths(rightDocs)
+          rightValue = lengths(rightDocs),
+          value = lengths(list(union(leftDocs, rightDocs)))
         )
     } else {
       mutate(
         .,
         leftValue = 1,
-        rightValue = 1
+        rightValue = 1,
+        value = 1
       )
     }
   } %>% select(-leftDocs, -rightDocs)
 
-  end_time <- proc.time()
-  time <- end_time - start_time
-  print("Computing time join_value: ")
-  print(time)
-  
   return(aggregation)
 }
 
@@ -370,6 +358,8 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       rightId = right$list
     )) %>% mutate_all(as.character)
 
+    print(base)
+
     formated <- base%>% 
       mutate(joinType = join$cpt) %>% {
         if(nrow(.)){
@@ -381,13 +371,15 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
           mutate(
             .,
             leftValue = numeric(),
-            rightValue = numeric()
+            rightValue = numeric(),
+            value = numeric()
           )
         }
       } %>% select(
         cpt_A = leftType, id_A = leftId, value_A = leftValue,
         cpt_join = joinType, id_join = joinId,
-        cpt_B = rightType, id_B = rightId, value_B = rightValue
+        cpt_B = rightType, id_B = rightId, value_B = rightValue,
+        value
       )
   
   } else {
@@ -440,29 +432,9 @@ plot_diagram <- function(formated, doc = T){
   if(indirect){
     formated <- formated %>% 
       group_by(cpt_A, id_A, cpt_B, id_B) %>%
-      summarise(value_A = sum(value_A), value_B = sum(value_B)) %>%
+      summarise(value = sum(value)) %>%
       ungroup
-    
-    if(doc){
-      formated <- formated %>% 
-        gather(direction, value, value_A, value_B)
-      data_A <- formated %>% filter(direction == "value_A")
-      data_B <- formated %>% filter(direction == "value_B")
-      
-      edges <- tibble(
-        source = c(data_A$id_A, data_B$id_B),
-        target = c(data_A$id_B, data_B$id_A),
-        value = c(data_A$value, data_B$value),
-        direction = c(data_A$direction, data_B$direction)
-      )
-    }else{
-      formated <- formated %>% 
-        mutate(value = value_A, direction = "all")
     }
-  }else{
-    formated <- formated %>% 
-      mutate(direction = "all")
-  }
   
   nodes <- tibble(
     id = c(formated$id_A, formated$id_B),
@@ -473,33 +445,26 @@ plot_diagram <- function(formated, doc = T){
       names = get_property(id, as.character(group), "name")
     ) %>% as.data.frame
   
-  edges <- {
-    if(indirect && doc){
-      edges
-    }else{
-      tibble(
-        source = formated$id_A, # IMPORTANT: define pos 0+1=1 of cpt
-        target = formated$id_B, # IMPORTANT: define pos 1+1=2 of cpt
-        value = formated$value,
-        direction = formated$direction
-      )
-    }
-  } %>% mutate(
+  edges <- tibble(
+    source = formated$id_A, # IMPORTANT: define pos 0+1=1 of cpt
+    target = formated$id_B, # IMPORTANT: define pos 1+1=2 of cpt
+    value = formated$value
+  ) %>% mutate(
     IDsource = match(source, nodes$id) - 1,
     IDtarget = match(target, nodes$id) - 1
   ) %>% as.data.frame
   
   
   type_color <- " d3.scaleOrdinal() 
-    .domain(['taxon', 'habitat', 'phenotype', 'use', 'all', 'value_A', 'value_B'])
-    .range(['#69b3a2', 'steelblue', '#242654', '#5cf1bb', '#dfe6e9', '#0984e3', '#fab1a0'])
+    .domain(['taxon', 'habitat', 'phenotype', 'use'])
+    .range(['#69b3a2', 'steelblue', '#242654', '#5cf1bb'])
   "
   
   sankey <- sankeyNetwork(
     Links = edges, Nodes = nodes,
     Source = "IDsource", Target = "IDtarget", Value = "value",
     NodeID = "names", NodeGroup = "group", NodePosX = "posX",
-    LinkGroup = "direction", nodeWidth = 30,
+    linkColor = '#dfe6e9', nodeWidth = 30,
     nodePadding = 15, colourScale = type_color, fontSize = 14,
     zoom = FALSE, numberFormat = ",.0f", showNodeValues = FALSE,
     highlightChildLinks = TRUE
@@ -518,51 +483,55 @@ plot_diagram <- function(formated, doc = T){
 }
 
 
-part_diagram <- function(formated, direction = "A"){
-  #' Sankey plot Florilege's indirect part relations resource.
-  #' formated: (tibble) cpt_A, id_A, cpt_B, id_B, /join, value*
-  #' direction: (str) A or B
-  #' :return: (networkD3) sankey plot w/ Shiny input
-  
-  isA <- direction == "A"
-  
-  formated <- formated %>% 
-    select(ends_with(direction), ends_with("_join")) %>% 
-    select(cpt = 1, id = 2, value = 3, everything()) %>% 
-    group_by(cpt, id, cpt_join, id_join) %>% 
-    summarise(value = sum(value))
-  
-  nodes <- tibble(
-    id = c(formated$id, formated$id_join),
-    posX = c(rep(if(isA) 0 else 1, nrow(formated)), rep(if(isA) 1 else 0, nrow(formated))),
-    group = as.factor(c(formated$cpt, formated$cpt_join))
-  ) %>% unique %>% rowwise %>% 
-    mutate(
-      names = get_property(id, as.character(group), "name")
+  part_diagram <- function(formated, direction = "A"){
+    #' Sankey plot Florilege's indirect part relations resource.
+    #' formated: (tibble) cpt_A, id_A, cpt_B, id_B, /join, value*
+    #' direction: (str) A or B
+    #' :return: (networkD3) sankey plot w/ Shiny input
+    
+    isA <- direction == "A"
+    
+    
+    formated <- formated %>% 
+      select(ends_with(direction), ends_with("_join")) %>% 
+      select(cpt = 1, id = 2, value = 3, everything()) %>% 
+      group_by(cpt, id, cpt_join, id_join) %>% 
+      summarise(value = sum(value))
+    #    arrange(desc(id_join))
+    
+    nodes <- tibble(
+      id = c(formated$id, formated$id_join),
+      posX = c(rep(if(isA) 0 else 1, nrow(formated)), rep(if(isA) 1 else 0, nrow(formated))),
+      group = as.factor(c(formated$cpt, formated$cpt_join))
+    ) %>% unique %>% rowwise %>% 
+      mutate(
+        names = get_property(id, as.character(group), "name")
+      ) %>% as.data.frame
+    
+    edges <- tibble(
+      source = if(isA) formated$id else formated$id_join,
+      target = if(isA) formated$id_join else formated$id,
+      value = formated$value
+    ) %>% mutate(
+      IDsource = match(source, nodes$id) - 1,
+      IDtarget = match(target, nodes$id) - 1
     ) %>% as.data.frame
-  
-  edges <- tibble(
-    source = if(isA) formated$id else formated$id_join,
-    target = if(isA) formated$id_join else formated$id,
-    value = formated$value
-  ) %>% mutate(
-    IDsource = match(source, nodes$id) - 1,
-    IDtarget = match(target, nodes$id) - 1
-  ) %>% as.data.frame
-  
-  type_color <- " d3.scaleOrdinal() 
+    
+    type_color <- " d3.scaleOrdinal() 
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
     .range(['#69b3a2', 'steelblue', '#242654', '#5cf1bb'])
   "
-  
-  sankey <- sankeyNetwork(
-    Links = edges, Nodes = nodes,
-    Source = "IDsource", Target = "IDtarget", Value = "value",
-    NodeID = "names", NodeGroup = "group", NodePosX = "posX",
-    nodeWidth = 20, nodePadding = 20, colourScale = type_color,
-    fontSize = 14, highlightChildLinks = TRUE,
-    zoom = TRUE, numberFormat = ",.0f", showNodeValues = FALSE
-  )
-  
-  return(sankey)
-}
+    
+    sankey <- sankeyNetwork(
+      Links = edges, Nodes = nodes,
+      Source = "IDsource", Target = "IDtarget", Value = "value",
+      NodeID = "names", NodeGroup = "group", NodePosX = "posX",
+      nodeWidth = 20, nodePadding = 20, colourScale = type_color,
+      fontSize = 14, highlightChildLinks = TRUE,
+      zoom = FALSE, numberFormat = ",.0f", showNodeValues = FALSE,
+      iterations = 0
+    )
+    
+    return(sankey)
+    
+  }

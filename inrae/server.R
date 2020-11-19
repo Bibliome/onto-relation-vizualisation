@@ -16,24 +16,24 @@ shinyServer(function(input, output, session){
     observe({
         updateSelectizeInput(
             session, 'root_A', server = TRUE, selected = '',
-            choices = concept[[input$cpt_A]]$name %>% invert(F)
+            choices = concept_choices[[input$cpt_A]]
         )
         
         updateSelectizeInput(
             session, 'list_A', server = TRUE, selected = '',
-            choices = concept[[input$cpt_A]]$name %>% invert(F)
+            choices = concept_choices[[input$cpt_A]]
         )
     })
     
     observe({
         updateSelectizeInput(
             session, 'root_B', server = TRUE, selected = '',
-            choices = concept[[input$cpt_B]]$name %>% invert(F)
+            choices = concept_choices[[input$cpt_B]]
         )
         
         updateSelectizeInput(
             session, 'list_B', server = TRUE, selected = '',
-            choices = concept[[input$cpt_B]]$name %>% invert(F)
+            choices = concept_choices[[input$cpt_B]]
         )
     })
 
@@ -55,6 +55,7 @@ shinyServer(function(input, output, session){
         disable("process")
         disable("path_A")
         disable("path_B")
+        
         response_data(NULL)
         
         use_doc(isolate({input$indicator == "doc"}))
@@ -84,7 +85,7 @@ shinyServer(function(input, output, session){
         rootCpt_B$cpt <- isolate(input$cpt_B)
         rootJoin$cpt <- isolate(input$cpt_join)
         
-        formated <- filterQuery(list(
+        filterQuery(list(
             reactiveValuesToList(rootCpt_A),
             reactiveValuesToList(rootCpt_B),
             reactiveValuesToList(rootJoin)
@@ -92,15 +93,92 @@ shinyServer(function(input, output, session){
             doc = use_doc(),
             source = isolate({input$source}),
             qps = isolate({input$qps})
-        )
-        
-        formated %>% response_data()
+        ) %>% response_data()
         
         enable("process")
         enable("path_A")
         enable("path_B")
     })
     
+    
+    ###--- TABLE ---###
+    output$response <- renderDataTable({
+        req(response_data())
+        req(nrow(response_data()) > 0)
+        
+        indirect <- "id_join"%in%names(response_data())
+        
+        data <- response_data()
+        
+        print(paste(nrow(data), "relations."))
+        
+        if(indirect){
+            data <- select(data, -value)
+            names(data) <- c('Type A', 'id A', 'Value A', 'Type join', 'id join', 'Type B', 'id B', 'Value B')
+        }else{
+            names(data) <- c('Type A', 'id A', 'Type B', 'id B', 'Value')
+        }
+        
+        out <- datatable(
+            data, 
+            options = list(
+                pageLength = 10, lengthChange = FALSE,
+                bFilter = TRUE
+            ),
+            width = "100%"
+        )
+        
+        return(out)
+    })
+    
+    
+    ###--- THRESHOLD ---###
+    threshold <- reactive({
+        req(response_data())
+        data <- response_data()
+        maxnode <- sapply(
+            list(data$id_A, data$id_B),
+            function(x) unique(x) %>% length
+        ) %>% max
+        
+        return(maxnode)
+    })
+    
+    
+    plot_data <- reactiveVal()
+    observe({
+        req(threshold())
+        data <- response_data()
+        if (threshold() < 50){
+            updateCheckboxInput(session, "th", value = FALSE)
+            plot_data(data)
+        } else {
+            updateCheckboxInput(session, "th", value = TRUE)
+            plot_data(NULL)
+            
+            limits <- c(min(data$value), max(data$value))
+            
+            updateSliderInput(
+                session, "threshold_slide",
+                min = limits[1], max = limits[2],
+                value = c(median(limits), limits[2])
+            )
+            
+            response_data() %>% 
+                filter(between(value, median(limits), limits[2])) %>% 
+                plot_data()
+        }
+    })
+    
+    
+    observeEvent(input$reload,{
+        req(response_data())
+        print("update input")
+        limits <- input$threshold_slide
+        response_data() %>% 
+            filter(between(value, limits[1]+1, limits[2])) %>% 
+            plot_data()
+    })
     
     
     ###--- JOINT ---###
@@ -113,9 +191,9 @@ shinyServer(function(input, output, session){
     
     ###--- PLOTS ---###
     output$relationDiagram <- renderSankeyNetwork({
-        req(response_data())
-        req(nrow(response_data()) > 0)
-        plot_diagram(response_data(), use_doc())
+        req(plot_data())
+        req(nrow(plot_data()) > 0)
+        plot_diagram(plot_data(), use_doc())
     })
     
     output$relationA <- renderSankeyNetwork({
@@ -163,19 +241,6 @@ shinyServer(function(input, output, session){
         )
     })
     
-    ###--- TABLE ---###
-    output$response <- renderDataTable({
-        req(response_data())
-        datatable(
-            response_data(),
-            options = list(
-                pageLength = 10, lengthChange = FALSE,
-                bFilter = TRUE
-            ),
-            width = "100%"
-        )
-    })
-    
     
     ###--- NO RELATION ---###
     observe({
@@ -200,25 +265,60 @@ shinyServer(function(input, output, session){
         use_doc(isolate({input$indicator == "doc"}))
         node <- isolate(input$nodeID)
         #node: id, cpt, posX
+        
+        temp_A <- list(
+            active = activeCpt_A(),
+            cpt = rootCpt_A$cpt,
+            list = rootCpt_A$list
+        )
+        temp_B <- list(
+            active = activeCpt_B(),
+            cpt = rootCpt_B$cpt,
+            list = rootCpt_B$list
+        )
+        
         if(node[3] == rootCpt_A$pos){ # pos "1"
-            activeCpt_A(node[1])
-            rootCpt_A$id <- node[1]
-            rootCpt_A$list <- NULL
+            temp_A$active <- node[1]
+            temp_A$list <- NULL
         }else{
-            activeCpt_B(node[1])
-            rootCpt_B$id <- node[1]
-            rootCpt_B$list <- NULL
+            temp_B$active <- node[1]
+            temp_B$list <- NULL
         }
         
-        filterQuery(list(
-            list(cpt = rootCpt_A$cpt, list = rootCpt_A$list, id = activeCpt_A(), pos = '1'),
-            list(cpt = rootCpt_B$cpt, list = rootCpt_B$list, id = activeCpt_B(), pos = '2'),
+        formated <- filterQuery(list(
+            list(cpt = temp_A$cpt, list = temp_A$list, id = temp_A$active, pos = '1'),
+            list(cpt = temp_B$cpt, list = temp_B$list, id = temp_B$active, pos = '2'),
             reactiveValuesToList(rootJoin)
             ),
             doc = use_doc(),
             source = isolate({input$source}),
             qps = isolate({input$qps})
-        ) %>% response_data()
+        )
+        
+        
+        if(nrow(formated)){
+            
+            formated %>% response_data()
+            
+            if(node[3] == rootCpt_A$pos){
+                activeCpt_A(node[1])
+                rootCpt_A$id <- node[1]
+                rootCpt_A$list <- NULL
+            }else{
+                activeCpt_B(node[1])
+                rootCpt_B$id <- node[1]
+                rootCpt_B$list <- NULL
+            }
+        } else {
+            showModal(modalDialog(
+                title = NULL,
+                "No more relation beyond this level",
+                easyClose = TRUE,
+                footer = NULL
+            ))
+        }
+        
+        response_data()
         enable("process")
         enable("path_A")
         enable("path_B")
@@ -236,7 +336,8 @@ shinyServer(function(input, output, session){
         disable("process")
         disable("path_A")
         disable("path_B")
-        response_data(NULL)
+        hide("relationDiagram")
+
         
         use_doc(isolate({input$indicator == "doc"}))
 
@@ -247,29 +348,62 @@ shinyServer(function(input, output, session){
         
         node <- list(input$path_A, input$path_B)[[which(clicked)]]
         
+        temp_A <- list(
+            active = activeCpt_A(),
+            cpt = rootCpt_A$cpt,
+            list = rootCpt_A$list
+        )
+        temp_B <- list(
+            active = activeCpt_B(),
+            cpt = rootCpt_B$cpt,
+            list = rootCpt_B$list
+        )
+        
         if(which(clicked) == rootCpt_A$pos){ # pos "1"
-            activeCpt_A(node)
-            rootCpt_A$id <- node
-            rootCpt_A$list <- NULL
+            temp_A$active <- node
+            temp_A$list <- NULL
         }else{
-            activeCpt_B(node)
-            rootCpt_A$id <- node
-            rootCpt_A$list <- NULL
+            temp_B$active <- node
+            temp_B$list <- NULL
         }
         
-        filterQuery(list(
-            list(cpt = rootCpt_A$cpt, list = rootCpt_A$list, id = activeCpt_A(), pos = '1'),
-            list(cpt = rootCpt_B$cpt, list = rootCpt_B$list, id = activeCpt_B(), pos = '2'),
+        formated <- filterQuery(list(
+            list(cpt = temp_A$cpt, list = temp_A$list, id = temp_A$active, pos = '1'),
+            list(cpt = temp_B$cpt, list = temp_B$list, id = temp_B$active, pos = '2'),
             reactiveValuesToList(rootJoin)
             ),
             doc = use_doc(),
             source = isolate({input$source}),
             qps = isolate({input$qps})
-        ) %>% response_data()
+        )
+        
+        
+        if(nrow(formated)){
+            
+            formated %>% response_data()
+            
+            if(which(clicked) == rootCpt_A$pos){ # pos "1"
+                activeCpt_A(node)
+                rootCpt_A$id <- node
+                rootCpt_A$list <- NULL
+            }else{
+                activeCpt_B(node)
+                rootCpt_A$id <- node
+                rootCpt_A$list <- NULL
+            }
+        } else {
+            showModal(modalDialog(
+                title = NULL,
+                "No more relation beyond this level",
+                easyClose = TRUE,
+                footer = NULL
+            ))
+        }
         
         enable("process")
         enable("path_A")
         enable("path_B")
+        show("relationDiagram")
     })
     
     
