@@ -178,5 +178,5 @@ shinyUI(bootstrapPage(
         sankeyNetworkOutput("relationB", width = "50%")
     ),
     
-    dataTableOutput("response")
+    DT::dataTableOutput("response")
 ))

@@ -102,7 +102,7 @@ shinyServer(function(input, output, session){
     
     
     ###--- TABLE ---###
-    output$response <- renderDataTable({
+    output$response <- DT::renderDataTable({
         req(response_data())
         req(nrow(response_data()) > 0)
         
@@ -119,7 +119,7 @@ shinyServer(function(input, output, session){
             names(data) <- c('Type A', 'id A', 'Type B', 'id B', 'Value')
         }
         
-        out <- datatable(
+        out <- DT::datatable(
             data, 
             options = list(
                 pageLength = 10, lengthChange = FALSE,
