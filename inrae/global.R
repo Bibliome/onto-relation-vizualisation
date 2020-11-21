@@ -209,7 +209,7 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
 
 
 
-get_join_relations <- function(left, right, join, source = '', qps = FALSE){
+get_join_relations <- function(leftType, leftId, rightType, rightId, join, source = '', qps = FALSE){
   #' Pull in Florilege's join relations
   #' left, right, join: (list) cpt, root
   #' source: (str) PubMed, CIRM, DSMZ, GenBank
@@ -218,28 +218,37 @@ get_join_relations <- function(left, right, join, source = '', qps = FALSE){
   
   source <- switch((source == '')+1, source, NULL)
   
+  names(leftId) <- rep("left-root", length(leftId))
+  names(rightId) <- rep("right-root", length(rightId))
+
   main <- "http://migale.jouy.inra.fr/florilege-api-dev/api/search/join-relations"
-  query <- list(
-    "left-type" = left$cpt,
-    "left-root" = left$id,
-    "right-type" = right$cpt,
-    "right-root" = right$id,
-    "join-type" = join$cpt,
-    "join-root" = join$id,
-    source = source,
-    qps = qps
+  query <- c(
+    leftId,
+    rightId,
+    list(
+      "left-type" = leftType,
+      "right-type" = rightType,
+      "join-type" = join$cpt,
+      "join-root" = join$id,
+      source = source,
+      qps = qps
+      )
   )
-  
+
   request <- GET(url = main, query = query)
+  print(request)
+
   response <- FALSE
   data <- tibble(
     leftType = character(),
+    leftRoot = character(),
     leftId = character(),
     leftSource = character(),
     leftDocs = list(),
     joinType = character(),
     joinId = character(),
     rightType = character(),
+    rightRoot = character(),
     rightId = character(),
     rightSource = character(),
     rightDocs = list()
@@ -287,16 +296,15 @@ aggregate_value <- function(taxid, obtid, type, source = '', qps = F, doc = T){
 
 
 
-join_value <- function(lt, lid, rt, rid, jt, jid = NULL, source = '', qps = F, doc = T){
+join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, source = '', qps = F, doc = T){
   #' Aggregation of join request
   #' base: (tibble) df with all relations
   #' *: left, right and join | type and id
   #' docs: (bool) aggregate on docs
   #' :return: (tibble) joind, leftValue, rightValue, value
-  
+
   request <- get_join_relations(
-    list(id = lid, cpt = lt),
-    list(id = rid, cpt = rt),
+    leftType, leftId, rightType, rightId,
     list(id = jid, cpt = jt),
     source, qps
   ) %>% select(joinId, leftDocs, rightDocs)
@@ -318,7 +326,7 @@ join_value <- function(lt, lid, rt, rid, jt, jid = NULL, source = '', qps = F, d
       )
     }
   } %>% select(-leftDocs, -rightDocs)
-
+  
   return(aggregation)
 }
 
@@ -357,15 +365,13 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       rightType = right$cpt,
       rightId = right$list
     )) %>% mutate_all(as.character)
-
-    print(base)
-
+    
     formated <- base%>% 
       mutate(joinType = join$cpt) %>% {
         if(nrow(.)){
           group_by_all(.) %>% do(join_value(
-            .$leftType, .$leftId, .$rightType, .$rightId,
-            .$joinType, source = source, qps = qps, doc = doc
+            left$cpt, left$list, right$cpt, right$list,
+            join$cpt, source = source, qps = qps, doc = doc
           )) %>% ungroup
         }else{
           mutate(
