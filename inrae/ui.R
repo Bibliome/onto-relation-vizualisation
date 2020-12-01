@@ -154,9 +154,9 @@ shinyUI(bootstrapPage(
         uiOutput("UI_path_B", class = "nodepath")
     ),
     
-    checkboxInput("th", NULL, value = FALSE),
+    checkboxInput("threshold_checkbox", NULL, value = FALSE),
     conditionalPanel(
-        condition = "input.th == true",
+        condition = "input.threshold_checkbox == true",
         id = "threshold_control",
         p("Threshold: "),
         sliderInput(
@@ -177,6 +177,6 @@ shinyUI(bootstrapPage(
         sankeyNetworkOutput("relationA", width = "50%"),
         sankeyNetworkOutput("relationB", width = "50%")
     ),
-    
+
     DT::dataTableOutput("response")
 ))

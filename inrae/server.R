@@ -103,22 +103,58 @@ shinyServer(function(input, output, session){
     
     ###--- TABLE ---###
     output$response <- DT::renderDataTable({
-        req(response_data())
-        req(nrow(response_data()) > 0)
+        req(plot_data())
+        req(nrow(plot_data()) > 0)
         
-        indirect <- "id_join"%in%names(response_data())
+        indirect <- "id_join"%in%names(plot_data())
         
-        data <- response_data()
-        
+        data <- plot_data()
         print(paste(nrow(data), "relations."))
         
-        if(indirect){
-            data <- select(data, -value)
-            names(data) <- c('Type A', 'id A', 'Value A', 'Type join', 'id join', 'Type B', 'id B', 'Value B')
-        }else{
-            names(data) <- c('Type A', 'id A', 'Type B', 'id B', 'Value')
-        }
         
+        if(indirect && input$second_rel){
+            data <- data %>%
+                mutate(
+                  name_A = get_property(id_A, cpt_A, "name"),
+                  name_B = get_property(id_B, cpt_B, "name"),
+                  name_join =  get_property(id_join, cpt_join, "name")
+                )
+  
+            data <- data[c("cpt_A",
+                       "id_A",
+                       "name_A",
+                       "value_A",
+                       "cpt_join",
+                       "id_join",
+                       "name_join",
+                       "cpt_B",
+                       "id_B",
+                       "name_B",
+                       "value_B",
+                       "value")]
+            names(data) <- c('Type A', 'ID A', 'Name A', 'Value A', 'Type join', 'ID join', 'Name join', 'Type B', 'ID B', 'Name B', 'Value B', 'Value')
+        }else{
+          if(indirect){
+            data <- data %>% 
+              group_by(cpt_A, id_A, cpt_B, id_B) %>%
+              summarise(value = sum(value))
+          }
+          data <- data %>%
+            mutate(
+              name_A = get_property(id_A, cpt_A, "name"),
+              name_B = get_property(id_B, cpt_B, "name")
+            )
+          data <- data[c("cpt_A",
+                         "id_A",
+                         "name_A", 
+                         "cpt_B",
+                         "id_B",
+                         "name_B", 
+                         "value")]
+          names(data) <- c('Type A', 'ID A', 'Name A', 'Type B', 'ID B', 'Name B', 'Value')
+        }
+
+
         out <- DT::datatable(
             data, 
             options = list(
@@ -143,17 +179,27 @@ shinyServer(function(input, output, session){
         
         return(maxnode)
     })
-    
+
+    threshold_join <- reactive({
+      req(response_data())
+      data <- response_data()
+      maxnode <- sapply(
+        list(data$id_join),
+        function(x) unique(x) %>% length
+      ) %>% max
+      
+      return(maxnode)
+    })        
     
     plot_data <- reactiveVal()
     observe({
-        req(threshold())
+        req(threshold(), threshold_join())
         data <- response_data()
-        if (threshold() < 50){
-            updateCheckboxInput(session, "th", value = FALSE)
+        if (threshold() < 50 && (threshold_join() < 50 || !input$second_rel ) ){
+            updateCheckboxInput(session, "threshold_checkbox", value = FALSE)
             plot_data(data)
         } else {
-            updateCheckboxInput(session, "th", value = TRUE)
+            updateCheckboxInput(session, "threshold_checkbox", value = TRUE)
             plot_data(NULL)
             
             limits <- c(min(data$value), max(data$value))
@@ -170,7 +216,6 @@ shinyServer(function(input, output, session){
         }
     })
     
-    
     observeEvent(input$reload,{
         req(response_data())
         print("update input")
@@ -179,7 +224,6 @@ shinyServer(function(input, output, session){
             filter(between(value, limits[1]+1, limits[2])) %>% 
             plot_data()
     })
-    
     
     ###--- JOINT ---###
     indirect <- reactive({
@@ -197,15 +241,15 @@ shinyServer(function(input, output, session){
     })
     
     output$relationA <- renderSankeyNetwork({
-        req(indirect(), response_data(), req(input$second_rel))
-        req(nrow(response_data()) > 0)
-        part_diagram(response_data(), "A")
+        req(indirect(), plot_data(), req(input$second_rel))
+        req(nrow(plot_data()) > 0)
+        part_diagram(plot_data(), "A")
     })
     
     output$relationB <- renderSankeyNetwork({
-        req(indirect(), response_data(), req(input$second_rel))
-        req(nrow(response_data()) > 0)
-        part_diagram(response_data(), "B")
+        req(indirect(), plot_data(), req(input$second_rel))
+        req(nrow(plot_data()) > 0)
+        part_diagram(plot_data(), "B")
     })
     
     

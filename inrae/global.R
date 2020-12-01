@@ -160,17 +160,23 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   
   source <- switch((source == '')+1, source, NULL)
   
-  main <- "http://migale.jouy.inra.fr/florilege-api/api/search/relations"
-  query <- list(
-    source = source,
-    taxid = taxid,
-    qps = qps,
-    obtid = obtid,
-    type = type
+  names(taxid) <- rep("taxid", length(taxid))
+  names(obtid) <- rep("obtid", length(obtid))
+  
+  main <- "http://migale.jouy.inra.fr/florilege-api-dev/api/search/relations"
+  query <- c(
+    taxid,
+    obtid,
+    list(
+      source = source,
+      qps = qps,
+      type = type
+    )
   )
   
-  
   request <- GET(url = main, query = query)
+  print("request URL")
+  print(request)
 
   response <- FALSE
   data <- tibble(
@@ -236,8 +242,9 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
   )
 
   request <- GET(url = main, query = query)
+  print("request URL")
   print(request)
-
+  
   response <- FALSE
   data <- tibble(
     leftType = character(),
@@ -253,7 +260,7 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
     rightSource = character(),
     rightDocs = list()
   )
-  
+
   if(request$status_code == 200){
     response <- request %>% 
       content(as = "text", encoding = "utf-8")
@@ -284,14 +291,25 @@ aggregate_value <- function(taxid, obtid, type, source = '', qps = F, doc = T){
   #' docs: (bool) aggregate on docs
   #' :return: (tibble) value
 
-  request <- get_relations(taxid, obtid, type, source, qps) %>% pull(docs)
+  request <- get_relations(taxid, obtid, type, source, qps)
+
+  request <- request %>%
+    select(taxroot, obtroot, type, docs) %>%
+    rename(taxid = taxroot) %>%
+    rename(obtid = obtroot)
+
   if(doc){
-    aggregation <- tibble(value = request %>% lengths %>% sum)
+    request <- request %>%
+      mutate(value = lengths(docs))
   } else {
-    aggregation <- tibble(value = request %>% length)
+    request <- request %>%
+      mutate(value = 1)
   }
-  
-  return(aggregation)
+  request <- request %>%
+    group_by(taxid,obtid,type) %>%
+    summarise(value = sum(value))
+    
+  return(request)
 }
 
 
@@ -307,26 +325,35 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
     leftType, leftId, rightType, rightId,
     list(id = jid, cpt = jt),
     source, qps
-  ) %>% select(joinId, leftDocs, rightDocs)
+  ) %>% select(leftType, leftId, rightType, rightId, joinType, joinId, leftDocs, rightDocs)
 
-  aggregation <- request %>% {
-    if(doc){
+  aggregation <- request %>% 
+    {
+      if(doc){
+          mutate(
+            .,
+            leftValue = lengths(leftDocs),
+            rightValue = lengths(rightDocs),
+            value = leftValue + rightValue
+          )
+      } else {
         mutate(
           .,
-          leftValue = lengths(leftDocs),
-          rightValue = lengths(rightDocs),
-          value = lengths(list(union(leftDocs, rightDocs)))
+          leftValue = 1,
+          rightValue = 1,
+          value = 1
         )
-    } else {
-      mutate(
-        .,
-        leftValue = 1,
-        rightValue = 1,
-        value = 1
-      )
+      }
     }
-  } %>% select(-leftDocs, -rightDocs)
-  
+
+  test <- aggregation %>%
+    select(leftId, rightId, leftDocs, rightDocs, leftValue, rightValue, value)
+
+  aggregation <- aggregation %>% 
+    select(-leftDocs, -rightDocs) %>%
+    group_by_all %>%
+    summarise(value = sum(value))
+
   return(aggregation)
 }
 
@@ -366,28 +393,28 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       rightId = right$list
     )) %>% mutate_all(as.character)
     
-    formated <- base%>% 
-      mutate(joinType = join$cpt) %>% {
-        if(nrow(.)){
-          group_by_all(.) %>% do(join_value(
-            left$cpt, left$list, right$cpt, right$list,
-            join$cpt, source = source, qps = qps, doc = doc
-          )) %>% ungroup
-        }else{
-          mutate(
-            .,
-            leftValue = numeric(),
-            rightValue = numeric(),
-            value = numeric()
-          )
-        }
-      } %>% select(
-        cpt_A = leftType, id_A = leftId, value_A = leftValue,
-        cpt_join = joinType, id_join = joinId,
-        cpt_B = rightType, id_B = rightId, value_B = rightValue,
-        value
+    if(nrow(base)){
+      formated <-join_value(
+        left$cpt, left$list, right$cpt, right$list,
+        join$cpt, source = source, qps = qps, doc = doc
       )
-  
+    }else{
+      formated <- base %>% 
+        mutate(joinType = join$cpt) %>%
+        mutate(
+        .,
+        leftValue = numeric(),
+        rightValue = numeric(),
+        value = numeric()
+      )
+    }
+    formated <- formated %>% select(
+      cpt_A = leftType, id_A = leftId, value_A = leftValue,
+      cpt_join = joinType, id_join = joinId,
+      cpt_B = rightType, id_B = rightId, value_B = rightValue,
+      value
+    )
+
   } else {
     leftTaxon <- left$cpt == 'taxon'
     taxon <- if(leftTaxon) left else right
@@ -399,28 +426,30 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       type = obt$cpt
     )) %>% mutate_all(as.character)
 
-    formated <- base %>% {
-        if(nrow(.)){
-          group_by_all(.) %>% do(aggregate_value(
-            .$taxid, .$obtid, .$type,
-            source, qps, doc
-          )) %>% ungroup
-        }else{
-          mutate(., value = numeric())
-        }
-      } %>% mutate(taxontype = "taxon") %>% {
-        if(leftTaxon){
-          select(
-            ., cpt_A = taxontype, id_A = taxid,
-            cpt_B = type, id_B = obtid, value
-          )
-        }else{
-          select(
-            ., cpt_A = type, id_A = obtid,
-            cpt_B = taxontype, id_B = taxid, value
-          )
-        }
-      } %>% filter(value != 0)
+    if(nrow(base)){
+      formated <- aggregate_value(
+          taxon$list, obt$list, obt$cpt,
+          source, qps, doc
+        )
+    }else{
+      formated <- base %>%
+        mutate(., value = numeric())
+    }
+
+    formated <-formated %>%
+      mutate(taxontype = "taxon") %>% {
+      if(leftTaxon){
+        select(
+          ., cpt_A = taxontype, id_A = taxid,
+          cpt_B = type, id_B = obtid, value
+        )
+      }else{
+        select(
+          ., cpt_A = type, id_A = obtid,
+          cpt_B = taxontype, id_B = taxid, value
+        )
+      }
+    } %>% filter(value != 0)
   }
 
   return(formated)
@@ -496,7 +525,6 @@ plot_diagram <- function(formated, doc = T){
     #' :return: (networkD3) sankey plot w/ Shiny input
     
     isA <- direction == "A"
-    
     
     formated <- formated %>% 
       select(ends_with(direction), ends_with("_join")) %>% 
