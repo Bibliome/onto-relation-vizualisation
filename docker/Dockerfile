@@ -28,6 +28,7 @@ RUN wget --no-verbose https://download3.rstudio.org/ubuntu-14.04/x86_64/VERSION 
     rm -f version.txt ss-latest.deb && \
     . /etc/environment && \
     R -e "install.packages(c('shiny', 'rmarkdown', 'DT', 'future', 'httr', 'jsonlite', 'promises', 'shiny', 'shinyjs', 'shinyWidgets', 'tidyverse', 'visNetwork', 'ontologyIndex', 'devtools', 'sankeyD3'))" && \
+    R -e "install.packages('dplyr', repos='https://cloud.r-project.org')" && \
     cp -R /usr/local/lib/R/site-library/shiny/examples/* /srv/shiny-server/ && \
     chown shiny:shiny /var/lib/shiny-server
     
