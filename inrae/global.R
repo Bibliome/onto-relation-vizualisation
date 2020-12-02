@@ -6,6 +6,7 @@ suppressMessages(library(jsonlite))
 suppressMessages(library(tidyverse))
 suppressMessages(library(ontologyIndex))
 suppressMessages(library(sankeyD3))
+suppressMessages(library(ini))
 
 ############################## APPENDIX ################################
 
@@ -20,11 +21,31 @@ concept <<- list(
   taxon = get_ontology("../../data/microorganisms.obo")
 )
 
+config <- read.ini("conf.ini")
 
 concept_choices <- concept %>%
   lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))])
 
 ontobiotope <<- c("habitat", "phenotype", "use")
+
+choices_type <- c("taxon", "habitat", "phenotype", "use")
+names(choices_type) <- c(config$LABELS$TYPE_TAXON,
+                         config$LABELS$TYPE_HABITAT,
+                         config$LABELS$TYPE_PHENOTYPE,
+                         config$LABELS$TYPE_USE)
+
+choices_indicator <- list("doc","relation")
+names(choices_indicator) <- c(config$LABELS$INDICATOR_DOC,
+                              config$LABELS$INDICATOR_RELATION)
+
+choices_source <- list("Pubmed",
+                       "CIRM",
+                       "DSMZ",
+                       "Genbank")
+names(choices_source) <- c(config$LABELS$SOURCE_PUBMED,
+                            config$LABELS$SOURCE_CIRM,
+                            config$LABELS$SOURCE_DSMZ,
+                            config$LABELS$SOURCE_GENBANK)
 
 DEBUG <<- FALSE
 

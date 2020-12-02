@@ -15,14 +15,14 @@ shinyUI(bootstrapPage(
     #------------------------ SEARCH PANEL ----------------------------#
     div(
         id = "searchPanel", class = "panel",
-        h1("Florilege Relations"),
+        h1(config$LABELS$TITLE),
         
         div(
             class = "conceptArea",
             selectInput(
                 inputId = "cpt_A",
-                choices = c("taxon", ontobiotope),
-                label = "Concept A"
+                choices = choices_type,
+                label = config$LABELS$CONCEPT_A
             ),
             selectizeInput(
                 inputId = "root_A",
@@ -31,7 +31,7 @@ shinyUI(bootstrapPage(
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = 'concept ID',
+                    placeholder = config$LABELS$CONCEPT_ID,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -43,7 +43,7 @@ shinyUI(bootstrapPage(
                 multiple = TRUE,
                 width = "100%",
                 options = list(
-                    placeholder = 'list of concept',
+                    placeholder = config$LABELS$CONCEPT_LIST,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -54,8 +54,8 @@ shinyUI(bootstrapPage(
             class = "conceptArea",
             selectInput(
                 inputId = "cpt_B",
-                choices = rev(c("taxon", ontobiotope)),
-                label = "Concept B"
+                choices = rev(choices_type),
+                label = config$LABELS$CONCEPT_B
             ),
             selectizeInput(
                 inputId = "root_B",
@@ -64,7 +64,7 @@ shinyUI(bootstrapPage(
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = 'concept ID',
+                    placeholder = config$LABELS$CONCEPT_ID,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -76,7 +76,7 @@ shinyUI(bootstrapPage(
                 multiple = TRUE,
                 width = "100%",
                 options = list(
-                    placeholder = 'list of concept',
+                    placeholder = config$LABELS$CONCEPT_LIST,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -85,8 +85,8 @@ shinyUI(bootstrapPage(
         
         prettyToggle(
             inputId = "showfilters",
-            label_on = "Hide filters",
-            label_off = "Show filters",
+            label_on = config$LABELS$FILTER_ON,
+            label_off = config$LABELS$FILTER_OFF,
             outline = TRUE,
             plain = TRUE,
             icon_on = icon("chevron-circle-down"),
@@ -101,26 +101,22 @@ shinyUI(bootstrapPage(
                 class = "selectArea",
                 selectInput(
                     inputId = "indicator",
-                    label = "Indicator",
-                    choices = c("doc", "relation"),
+                    label = config$LABELS$INDICATOR,
+                    choices = choices_indicator,
                     selected = "doc"
                 ),
                 
                 selectInput(
                     inputId = "source",
-                    label = "Source",
-                    choices = list(
-                        All = '', Pubmed = "PubMed",
-                        CIRM = 'CIRM', DSMZ = 'DSMZ',
-                        Genbank = 'GenBank'
-                    ),
+                    label = config$LABELS$SOURCE,
+                    choices = c(All = '', choices_source),
                     selected = ''
                 ),
                 
                 selectInput(
                     inputId = "cpt_join",
-                    label = "Join concept",
-                    choices = c(ontobiotope, "taxon"),
+                    label = config$LABELS$JOIN_CONCEPT,
+                    choices = rev(choices_type),
                     selected = "habitat"
                 )
             ),
@@ -129,21 +125,21 @@ shinyUI(bootstrapPage(
                 class = "switchArea",
                 materialSwitch(
                     inputId = "qps",
-                    label = "Qualified Presumption of Safety",
+                    label = config$LABELS$QPS,
                     value = FALSE,
                     status = "primary"
                 ),
                 
                 materialSwitch(
                     inputId = "second_rel",
-                    label = "Show direct secondary relations",
+                    label = config$LABELS$SECOND_REL,
                     value = FALSE,
                     status = "primary"
                 )
             )
         ),
 
-        actionButton("process", "Process")
+        actionButton("process", config$LABELS$PROCESS)
         
     ),
     #--------------------------- DIAGRAM ------------------------------#
@@ -158,16 +154,16 @@ shinyUI(bootstrapPage(
     conditionalPanel(
         condition = "input.threshold_checkbox == true",
         id = "threshold_control",
-        p("Threshold: "),
+        p(config$LABELS$THRESHOLD),
         sliderInput(
             "threshold_slide",
             label = NULL,
             min = 1, max = 100,
-            value = c(40, 60)
+            value = c(as.numeric(config$PARAMETERS$THRESHOLD)-10, as.numeric(config$PARAMETERS$THRESHOLD)+10)
         ),
         actionButton(
             "reload",
-            "Reload"
+            config$LABELS$RELOAD
         )
     ),
     

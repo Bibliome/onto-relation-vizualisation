@@ -132,7 +132,18 @@ shinyServer(function(input, output, session){
                        "name_B",
                        "value_B",
                        "value")]
-            names(data) <- c('Type A', 'ID A', 'Name A', 'Value A', 'Type join', 'ID join', 'Name join', 'Type B', 'ID B', 'Name B', 'Value B', 'Value')
+            names(data) <- c(config$LABELS$CPT_A,
+                           config$LABELS$ID_A,
+                           config$LABELS$NAME_A,
+                           config$LABELS$VALUE_A,
+                           config$LABELS$CPT_JOIN,
+                           config$LABELS$ID_JOIN,
+                           config$LABELS$NAME_JOIN,
+                           config$LABELS$CPT_B,
+                           config$LABELS$ID_B,
+                           config$LABELS$NAME_B,
+                           config$LABELS$VALUE_B,
+                           config$LABELS$VALUE)
         }else{
           if(indirect){
             data <- data %>% 
@@ -151,7 +162,13 @@ shinyServer(function(input, output, session){
                          "id_B",
                          "name_B", 
                          "value")]
-          names(data) <- c('Type A', 'ID A', 'Name A', 'Type B', 'ID B', 'Name B', 'Value')
+          names(data) <- c(config$LABELS$CPT_A,
+                           config$LABELS$ID_A,
+                           config$LABELS$NAME_A,
+                           config$LABELS$CPT_B,
+                           config$LABELS$ID_B,
+                           config$LABELS$NAME_B,
+                           config$LABELS$VALUE)          
         }
 
 
@@ -195,7 +212,8 @@ shinyServer(function(input, output, session){
     observe({
         req(threshold(), threshold_join())
         data <- response_data()
-        if (threshold() < 50 && (threshold_join() < 50 || !input$second_rel ) ){
+        if (threshold() < as.numeric(config$PARAMETERS$THRESHOLD) &&
+            (threshold_join() < as.numeric(config$PARAMETERS$THRESHOLD) || !input$second_rel ) ){
             updateCheckboxInput(session, "threshold_checkbox", value = FALSE)
             plot_data(data)
         } else {
@@ -262,7 +280,7 @@ shinyServer(function(input, output, session){
         
         radioGroupButtons(
             inputId = "path_A",
-            label = "Path node A",
+            label = config$LABELS$PATH_A,
             choices = path,
             selected = activeCpt_A(),
             direction = "vertical"
@@ -278,7 +296,7 @@ shinyServer(function(input, output, session){
         
         radioGroupButtons(
             inputId = "path_B",
-            label = "Path node B",
+            label = config$LABELS$PATH_B,
             choices = path,
             selected = activeCpt_B(),
             direction = "vertical"
