@@ -55,3 +55,7 @@ So, run `./build.sh` to build image and `./run.sh` to run the container.
 Please, don't forget to change the path to data folder in the `run.sh` file.
 
 ---
+
+## Configuration
+
+Labels and parameters are stored in `inrae/conf.ini`. When changed the docker image needs to be rebuild.
