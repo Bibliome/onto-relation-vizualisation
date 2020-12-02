@@ -11,11 +11,26 @@ Docker is an open source tool to build, ship, and run distributed applications i
 
 ### Prerequisites
 
-- Install docker by using this command
+We recommend the following minimal configuration (or above) :
+
+- 2	vCPUs i386, x86_64
+- RAM 4Go
+- Ubuntu 18.04.5 LTS
+- Docker version 19.03.8
+
+Install docker by using this command
 
 ```bash
 sudo apt install docker.io
 ```
+
+The ontology files need to be stored in a folder accessible by docker (referenced by `/absolute/path/to/data/` below). There are :
+
+- BioNLP-OST+EnovFood-Habitat.obo
+- BioNLP-OST+EnovFood-Phenotype.obo
+- microorganisms.obo
+- Use_V2.obo
+
 
 ### Building from source code
 
@@ -59,3 +74,11 @@ Please, don't forget to change the path to data folder in the `run.sh` file.
 ## Configuration
 
 Labels and parameters are stored in `inrae/conf.ini`. When changed the docker image needs to be rebuild.
+
+## Miscellaneous
+
+If a problem happens, you can check logs by running :
+
+```bash
+sudo docker logs inrae
+```
