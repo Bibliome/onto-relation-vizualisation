@@ -11,7 +11,6 @@ suppressMessages(library(tidyverse))
 
 shinyServer(function(input, output, session){
     
-    
     ###-- AUTOCOMPLETION --###
     observe({
         updateSelectizeInput(
@@ -143,7 +142,7 @@ shinyServer(function(input, output, session){
                            config$LABELS$ID_B,
                            config$LABELS$NAME_B,
                            config$LABELS$VALUE_B,
-                           config$LABELS$VALUE)
+                           config$LABELS$VALUE_SUM)
         }else{
           if(indirect){
             data <- data %>% 
@@ -269,7 +268,12 @@ shinyServer(function(input, output, session){
         req(nrow(plot_data()) > 0)
         part_diagram(plot_data(), "B")
     })
-    
+
+    output$visuPanel_intro <- renderUI({
+      req(plot_data())
+      tagList(tags$h2(config$LABELS$RESULT_TITLE),
+              tags$p(config$LABELS$RESULT_INTRO))
+    })
     
     ###--- PATH A ---###
     output$UI_path_A <- renderUI({
@@ -323,7 +327,7 @@ shinyServer(function(input, output, session){
         disable("path_A")
         disable("path_B")
         hide("relationDiagram")
-        
+
         use_doc(isolate({input$indicator == "doc"}))
         node <- isolate(input$nodeID)
         #node: id, cpt, posX
@@ -400,7 +404,6 @@ shinyServer(function(input, output, session){
         disable("path_B")
         hide("relationDiagram")
 
-        
         use_doc(isolate({input$indicator == "doc"}))
 
         clicked <- c()

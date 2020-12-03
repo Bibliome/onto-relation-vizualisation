@@ -3,6 +3,10 @@
     flex-wrap: wrap;
 }
 
+h2 {
+    flex: 1 1 100%;
+}
+
 #searchPanel > h1 {
     flex: 1 1 100%;
     text-align: center;
@@ -38,22 +42,23 @@
     padding: 0 5%;
 }
 
-.conceptArea div:nth-child(1){
+.conceptArea div:nth-child(2){
     flex: 1 1 25%;
 }
 
-.conceptArea div:nth-child(2){
+.conceptArea div:nth-child(3){
     flex: 1 1 75%;
-}
-
-.conceptArea div:nth-child(2) label{
-    visibility: hidden;
 }
 
 .conceptArea > div {
     padding: 0 1em;
 }
 
+#visuPanel_intro {
+    flex: 1 1 100%;
+    text-align: center;
+}
+  
 .nodepath {
     flex: 1 1 15%;
     padding: 0 5%;

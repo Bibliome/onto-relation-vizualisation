@@ -19,19 +19,20 @@ shinyUI(bootstrapPage(
         
         div(
             class = "conceptArea",
+            h2(config$LABELS$CONCEPT_A),
             selectInput(
                 inputId = "cpt_A",
                 choices = choices_type,
-                label = config$LABELS$CONCEPT_A
+                label = NULL,
             ),
             selectizeInput(
                 inputId = "root_A",
-                label = "p",
+                label = NULL,
                 choices = NULL,
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = config$LABELS$CONCEPT_ID,
+                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -52,19 +53,20 @@ shinyUI(bootstrapPage(
         
         div(
             class = "conceptArea",
+            h2(config$LABELS$CONCEPT_B),
             selectInput(
                 inputId = "cpt_B",
                 choices = rev(choices_type),
-                label = config$LABELS$CONCEPT_B
+                label = NULL,
             ),
             selectizeInput(
                 inputId = "root_B",
-                label = "p",
+                label = NULL,
                 choices = NULL,
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = config$LABELS$CONCEPT_ID,
+                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -145,6 +147,7 @@ shinyUI(bootstrapPage(
     #--------------------------- DIAGRAM ------------------------------#
     div(
         id = "visuPanel", class = "panel",
+        uiOutput("visuPanel_intro"),
         uiOutput("UI_path_A", class = "nodepath"),
         sankeyNetworkOutput("relationDiagram", width = "40%"),
         uiOutput("UI_path_B", class = "nodepath")
