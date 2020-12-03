@@ -51,6 +51,9 @@ shinyServer(function(input, output, session){
         B <- input$root_B != "" | length(input$list_B) > 0
         req(A, B)
         
+        p_generate <- Progress$new()
+        p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
+        
         disable("process")
         disable("path_A")
         disable("path_B")
@@ -97,6 +100,11 @@ shinyServer(function(input, output, session){
         enable("process")
         enable("path_A")
         enable("path_B")
+        if(is_tibble(response_data())){
+          p_generate$close()
+        }else{
+          p_generate$set(value = 0, response_data())
+        }
     })
     
     
@@ -186,7 +194,7 @@ shinyServer(function(input, output, session){
     
     ###--- THRESHOLD ---###
     threshold <- reactive({
-        req(response_data())
+        req(is_tibble(response_data()))
         data <- response_data()
         maxnode <- sapply(
             list(data$id_A, data$id_B),
@@ -197,7 +205,7 @@ shinyServer(function(input, output, session){
     })
 
     threshold_join <- reactive({
-      req(response_data())
+      req(is_tibble(response_data()))
       data <- response_data()
       maxnode <- sapply(
         list(data$id_join),
@@ -270,7 +278,7 @@ shinyServer(function(input, output, session){
     })
 
     output$visuPanel_intro <- renderUI({
-      req(plot_data())
+      req(nrow(response_data()) > 0, plot_data())
       tagList(tags$h2(config$LABELS$RESULT_TITLE),
               tags$p(config$LABELS$RESULT_INTRO))
     })
@@ -315,7 +323,7 @@ shinyServer(function(input, output, session){
         
         showModal(modalDialog(
             title = NULL,
-            "No more relation beyond this level",
+            config$LABELS$MESSAGE_NO_DATA,
             easyClose = TRUE,
             footer = NULL
         ))
@@ -323,6 +331,9 @@ shinyServer(function(input, output, session){
     
     ###--- CLICK NODE ---###
     observeEvent(input$nodeID,{
+        p_generate <- Progress$new()
+        p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
+
         disable("process")
         disable("path_A")
         disable("path_B")
@@ -378,7 +389,7 @@ shinyServer(function(input, output, session){
         } else {
             showModal(modalDialog(
                 title = NULL,
-                "No more relation beyond this level",
+                config$LABELS$MESSAGE_NO_DATA,
                 easyClose = TRUE,
                 footer = NULL
             ))
@@ -389,6 +400,7 @@ shinyServer(function(input, output, session){
         enable("path_A")
         enable("path_B")
         show("relationDiagram")
+        p_generate$close()
     })
     
     
@@ -399,6 +411,9 @@ shinyServer(function(input, output, session){
     }, {
         req(is.valid(input$path_A) && input$path_A != activeCpt_A() | is.valid(input$path_B) && input$path_B != activeCpt_B())
         
+        p_generate <- Progress$new()
+        p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
+      
         disable("process")
         disable("path_A")
         disable("path_B")
@@ -459,7 +474,7 @@ shinyServer(function(input, output, session){
         } else {
             showModal(modalDialog(
                 title = NULL,
-                "No more relation beyond this level",
+                config$LABELS$MESSAGE_NO_DATA,
                 easyClose = TRUE,
                 footer = NULL
             ))
@@ -469,6 +484,7 @@ shinyServer(function(input, output, session){
         enable("path_A")
         enable("path_B")
         show("relationDiagram")
+        p_generate$close()
     })
     
     
@@ -548,6 +564,9 @@ shinyServer(function(input, output, session){
         
         req(input$root_A, input$root_B, input$indicator)
         
+        p_generate <- Progress$new()
+        p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
+
         disable("process")
         disable("path_A")
         disable("path_B")
@@ -592,5 +611,6 @@ shinyServer(function(input, output, session){
         enable("process")
         enable("path_A")
         enable("path_B")
+        p_generate$close()
     })
 })

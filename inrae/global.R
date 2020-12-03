@@ -209,28 +209,25 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
     obt_forms = list(),
     docs = list()
   )
-  
+
   if(request$status_code == 200){
     response <- request %>% 
       content(as = "text", encoding = "utf-8")
-    response <- response != "[]"
-  }else if (request$status_code == 400){
-    cat("\nBad Request - Check arguments\n")
+    
+    data <- response %>% 
+      fromJSON %>% as_tibble
+    
+    if( (response != "[]") && DEBUG ){
+      cat(paste(
+        "\nget_relations: Not enough data pulled:",
+        taxid, obtid, "\n"
+      ))
+    }
   } else {
     cat("\nServer error\n")
+    data <- paste("Error",request$status_code,warn_for_status(request))
   }
-  
-  if(response){
-    data <- request %>% 
-      content(as = "text", encoding = "utf-8") %>% 
-      fromJSON %>% as_tibble
-  } else {
-    if(DEBUG) cat(paste(
-      "\nget_relations: Not enough data pulled:",
-      taxid, obtid, "\n"
-    ))
-  }
-  
+
   return(data)
 }
 
@@ -285,22 +282,21 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
   if(request$status_code == 200){
     response <- request %>% 
       content(as = "text", encoding = "utf-8")
-  }else if (request$status_code == 400){
-    cat("\nBad Request - Check arguments\n")
-  } else {
-    cat("\nServer error\n")
-  }
-  
-  if(response != "[]"){
+
     data <- response %>% 
       fromJSON %>% as_tibble
+
+    if( (response != "[]") && DEBUG ){
+      cat(paste(
+        "\nget_join_relations: Not enough data pulled:",
+        left$id, right$id, "join on", join$id,"\n"
+      ))
+    }
   } else {
-    if(DEBUG) cat(paste(
-      "\nget_join_relations: Not enough data pulled:",
-      left$id, right$id, "join on", join$id,"\n"
-    ))
+    cat("\nServer error\n")
+    data <- paste("Error",request$status_code,warn_for_status(request))
   }
-  
+
   return(data)
 }
 
@@ -313,23 +309,24 @@ aggregate_value <- function(taxid, obtid, type, source = '', qps = F, doc = T){
   #' :return: (tibble) value
 
   request <- get_relations(taxid, obtid, type, source, qps)
-
-  request <- request %>%
-    select(taxroot, obtroot, type, docs) %>%
-    rename(taxid = taxroot) %>%
-    rename(obtid = obtroot)
-
-  if(doc){
+  
+  if(is_tibble(request) && nrow(request)){
     request <- request %>%
-      mutate(value = lengths(docs))
-  } else {
+      select(taxroot, obtroot, type, docs) %>%
+      rename(taxid = taxroot) %>%
+      rename(obtid = obtroot)
+  
+    if(doc){
+      request <- request %>%
+        mutate(value = lengths(docs))
+    } else {
+      request <- request %>%
+        mutate(value = 1)
+    }
     request <- request %>%
-      mutate(value = 1)
+      group_by(taxid,obtid,type) %>%
+      summarise(value = sum(value))
   }
-  request <- request %>%
-    group_by(taxid,obtid,type) %>%
-    summarise(value = sum(value))
-    
   return(request)
 }
 
@@ -346,36 +343,37 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
     leftType, leftId, rightType, rightId,
     list(id = jid, cpt = jt),
     source, qps
-  ) %>% select(leftType, leftId, rightType, rightId, joinType, joinId, leftDocs, rightDocs)
-
-  aggregation <- request %>% 
-    {
-      if(doc){
+  ) 
+  
+  if(is_tibble(request) && nrow(request)){
+    request <- request %>%
+      select(leftType, leftId, rightType, rightId, joinType, joinId, leftDocs, rightDocs)
+  
+    request <- request %>% 
+      {
+        if(doc){
+            mutate(
+              .,
+              leftValue = lengths(leftDocs),
+              rightValue = lengths(rightDocs),
+              value = leftValue + rightValue
+            )
+        } else {
           mutate(
             .,
-            leftValue = lengths(leftDocs),
-            rightValue = lengths(rightDocs),
-            value = leftValue + rightValue
+            leftValue = 1,
+            rightValue = 1,
+            value = 1
           )
-      } else {
-        mutate(
-          .,
-          leftValue = 1,
-          rightValue = 1,
-          value = 1
-        )
+        }
       }
-    }
-
-  test <- aggregation %>%
-    select(leftId, rightId, leftDocs, rightDocs, leftValue, rightValue, value)
-
-  aggregation <- aggregation %>% 
-    select(-leftDocs, -rightDocs) %>%
-    group_by_all %>%
-    summarise(value = sum(value))
-
-  return(aggregation)
+  
+    request <- request %>% 
+      select(-leftDocs, -rightDocs) %>%
+      group_by_all %>%
+      summarise(value = sum(value))
+  }
+  return(request)
 }
 
 
@@ -429,12 +427,14 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
         value = numeric()
       )
     }
-    formated <- formated %>% select(
+    if(is_tibble(formated) && nrow(formated)){
+      formated <- formated %>% select(
       cpt_A = leftType, id_A = leftId, value_A = leftValue,
       cpt_join = joinType, id_join = joinId,
       cpt_B = rightType, id_B = rightId, value_B = rightValue,
       value
-    )
+      )
+    }
 
   } else {
     leftTaxon <- left$cpt == 'taxon'
@@ -452,25 +452,28 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
           taxon$list, obt$list, obt$cpt,
           source, qps, doc
         )
+
     }else{
       formated <- base %>%
         mutate(., value = numeric())
     }
 
-    formated <-formated %>%
-      mutate(taxontype = "taxon") %>% {
-      if(leftTaxon){
-        select(
-          ., cpt_A = taxontype, id_A = taxid,
-          cpt_B = type, id_B = obtid, value
-        )
-      }else{
-        select(
-          ., cpt_A = type, id_A = obtid,
-          cpt_B = taxontype, id_B = taxid, value
-        )
-      }
-    } %>% filter(value != 0)
+    if(is_tibble(formated) && nrow(formated)){
+      formated <-formated %>%
+        mutate(taxontype = "taxon") %>% {
+          if(leftTaxon){
+            select(
+              ., cpt_A = taxontype, id_A = taxid,
+              cpt_B = type, id_B = obtid, value
+            )
+          }else{
+            select(
+              ., cpt_A = type, id_A = obtid,
+              cpt_B = taxontype, id_B = taxid, value
+            )
+          }
+        } %>% filter(value != 0)
+    }
   }
 
   return(formated)
