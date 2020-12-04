@@ -16,6 +16,17 @@ shinyUI(bootstrapPage(
     div(
         id = "searchPanel", class = "panel",
         h1(config$LABELS$TITLE),
+        p(
+          id ="caption",
+          config$LABELS$INTRO,
+          span(class="caption_taxon", "taxon"),
+          span(","),
+          span(class="caption_habitat", "habitat"),
+          span(","),
+          span(class="caption_phenotype", "phenotype"),
+          span(","),
+          span(class="caption_use", "use"),
+        ),
         
         div(
             class = "conceptArea",

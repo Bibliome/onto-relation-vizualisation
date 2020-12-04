@@ -575,11 +575,15 @@ plot_diagram <- function(formated, doc = T){
       IDtarget = match(target, nodes$id) - 1
     ) %>% as.data.frame
     
-    type_color <- " d3.scaleOrdinal() 
+    type_color <- paste0(" d3.scaleOrdinal() 
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
-    .range(['#69b3a2', 'steelblue', '#242654', '#5cf1bb'])
-  "
-    
+    .range([",
+      config$PARAMETERS$COLOR_TAXON,
+      config$PARAMETERS$COLOR_HABITAT,
+      config$PARAMETERS$COLOR_PHENOTYPE,
+      config$PARAMETERS$COLOR_USE,
+      "])")
+      
     sankey <- sankeyNetwork(
       Links = edges, Nodes = nodes,
       Source = "IDsource", Target = "IDtarget", Value = "value",

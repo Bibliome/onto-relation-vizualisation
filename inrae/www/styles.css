@@ -7,6 +7,34 @@ h2 {
     flex: 1 1 100%;
 }
 
+#caption {
+    flex: 1 1 100%;
+    font-size: 1.6em;
+    text-align: center;
+}
+
+.caption_taxon{
+    background-color: #69b3a2;
+    font-weight: bold;
+}
+
+.caption_habitat{
+    background-color: steelblue;
+    color: white;
+    font-weight: bold;
+}
+
+.caption_phenotype{
+    background-color: #242654;
+    color: white;
+    font-weight: bold;
+}
+
+.caption_use{
+    background-color: #5cf1bb;
+    font-weight: bold;
+}
+
 #searchPanel > h1 {
     flex: 1 1 100%;
     text-align: center;
