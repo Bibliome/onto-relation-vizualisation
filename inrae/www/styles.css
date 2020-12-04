@@ -51,6 +51,12 @@ h2 {
     margin: 0 40%;
 }
 
+#searchPanel > button {
+    font-weight: bold;
+    color: white;
+    background-color: #007bff;
+}
+
 .filterArea .selectArea label {
     display: table-cell;
     text-align: left;
