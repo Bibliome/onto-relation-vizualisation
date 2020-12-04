@@ -35,6 +35,7 @@ shinyUI(bootstrapPage(
                 inputId = "cpt_A",
                 choices = choices_type,
                 label = NULL,
+                selected = "taxon"
             ),
             selectizeInput(
                 inputId = "root_A",
@@ -43,7 +44,7 @@ shinyUI(bootstrapPage(
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER,
+                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER_A,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -69,6 +70,7 @@ shinyUI(bootstrapPage(
                 inputId = "cpt_B",
                 choices = rev(choices_type),
                 label = NULL,
+                selected = "habitat"
             ),
             selectizeInput(
                 inputId = "root_B",
@@ -77,7 +79,7 @@ shinyUI(bootstrapPage(
                 multiple = FALSE,
                 width = "100%",
                 options = list(
-                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER,
+                    placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER_B,
                     maxOptions = 5,
                     create = FALSE
                 )
