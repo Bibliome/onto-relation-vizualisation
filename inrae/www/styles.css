@@ -45,13 +45,13 @@ h2 {
     margin: .5% 40%;
 }
 
-#searchPanel > button,
 #searchPanel .filterArea {
-    flex: 1 1 100%;
-    margin: 0 40%;
+    margin: 0 36%;
 }
 
 #searchPanel > button {
+    flex: 1 1 100%;
+    margin: 0 40%;
     font-weight: bold;
     color: white;
     background-color: #007bff;
@@ -59,14 +59,18 @@ h2 {
 
 .filterArea .selectArea label {
     display: table-cell;
-    text-align: left;
     vertical-align: middle;
-    width: 50%;
+    width: 75%;
 }
 
 .filterArea .selectArea .form-group {
     display: table;
     margin: 0;
+    width: 550px;
+}
+
+.filterArea .selectArea .selectize-input {
+    width: 350px;
 }
 
 .conceptArea{
@@ -92,7 +96,7 @@ h2 {
     flex: 1 1 100%;
     text-align: center;
 }
-  
+
 .nodepath {
     flex: 1 1 15%;
     padding: 0 5%;

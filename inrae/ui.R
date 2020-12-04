@@ -48,18 +48,6 @@ shinyUI(bootstrapPage(
                     maxOptions = 5,
                     create = FALSE
                 )
-            ),
-            selectizeInput(
-                inputId = "list_A",
-                label = NULL,
-                choices = NULL,
-                multiple = TRUE,
-                width = "100%",
-                options = list(
-                    placeholder = config$LABELS$CONCEPT_LIST,
-                    maxOptions = 5,
-                    create = FALSE
-                )
             )
         ),
         
@@ -80,18 +68,6 @@ shinyUI(bootstrapPage(
                 width = "100%",
                 options = list(
                     placeholder = config$LABELS$CONCEPT_NAME_PLACEHOLDER_B,
-                    maxOptions = 5,
-                    create = FALSE
-                )
-            ),
-            selectizeInput(
-                inputId = "list_B",
-                label = NULL,
-                choices = NULL,
-                multiple = TRUE,
-                width = "100%",
-                options = list(
-                    placeholder = config$LABELS$CONCEPT_LIST,
                     maxOptions = 5,
                     create = FALSE
                 )
@@ -121,11 +97,35 @@ shinyUI(bootstrapPage(
                     selected = "doc"
                 ),
                 
+                selectizeInput(
+                  inputId = "list_A",
+                  label = config$LABELS$CONCEPT_LIST_A,
+                  choices = NULL,
+                  multiple = TRUE,
+                  options = list(
+                    placeholder = config$LABELS$CONCEPT_LIST_PLACEHOLDER,
+                    maxOptions = 5,
+                    create = FALSE
+                  )
+                ),
+                
                 selectInput(
                     inputId = "source",
                     label = config$LABELS$SOURCE,
                     choices = c(All = '', choices_source),
                     selected = ''
+                ),
+                
+                selectizeInput(
+                  inputId = "list_B",
+                  label = config$LABELS$CONCEPT_LIST_B,
+                  choices = NULL,
+                  multiple = TRUE,
+                  options = list(
+                    placeholder = config$LABELS$CONCEPT_LIST_PLACEHOLDER,
+                    maxOptions = 5,
+                    create = FALSE
+                  )
                 ),
                 
                 selectInput(

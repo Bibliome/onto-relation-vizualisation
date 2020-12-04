@@ -49,40 +49,48 @@ shinyServer(function(input, output, session){
     observeEvent(input$process,{
         A <- input$root_A != "" | length(input$list_A) > 0
         B <- input$root_B != "" | length(input$list_B) > 0
-        req(A, B)
+
+        if(!A | !B){
+          showModal(modalDialog(
+            title = NULL,
+            config$LABELS$MESSAGE_NO_INPUT,
+            easyClose = TRUE,
+            footer = NULL
+          ))
+          return()
+        }
         
         p_generate <- Progress$new()
         p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
-        
-        disable("process")
-        disable("path_A")
-        disable("path_B")
         
         response_data(NULL)
         
         use_doc(isolate({input$indicator == "doc"}))
         
-        if(input$root_A != ""){
-            activeCpt_A(isolate(input$root_A))
-            rootCpt_A$id <- isolate(input$root_A)
-            rootCpt_A$list <- NULL
-        } else {
-            activeCpt_A(NULL)
-            rootCpt_A$id <- NULL
-            rootCpt_A$list <- isolate(input$list_A)
+        disable("process")
+        disable("path_A")
+        disable("path_B")
+        
+        if(length(input$list_A) > 0){
+          activeCpt_A(NULL)
+          rootCpt_A$id <- NULL
+          rootCpt_A$list <- isolate(input$list_A)
+        } else if(input$root_A != ""){
+          activeCpt_A(isolate(input$root_A))
+          rootCpt_A$id <- isolate(input$root_A)
+          rootCpt_A$list <- NULL
         }
         
-        if(input$root_B != ""){
-            activeCpt_B(isolate(input$root_B))
-            rootCpt_B$id <- isolate(input$root_B)
-            rootCpt_B$list <- NULL
-        } else {
-            activeCpt_B(NULL)
-            rootCpt_B$list <- NULL
-            rootCpt_B$list <- isolate(input$list_B)
+        if(length(input$list_B) > 0){
+          activeCpt_B(NULL)
+          rootCpt_B$list <- NULL
+          rootCpt_B$list <- isolate(input$list_B)
+        }else if(input$root_B != ""){
+          activeCpt_B(isolate(input$root_B))
+          rootCpt_B$id <- isolate(input$root_B)
+          rootCpt_B$list <- NULL
         }
-        
-        
+
         rootCpt_A$cpt <- isolate(input$cpt_A)
         rootCpt_B$cpt <- isolate(input$cpt_B)
         rootJoin$cpt <- isolate(input$cpt_join)
@@ -574,24 +582,40 @@ shinyServer(function(input, output, session){
         
         use_doc(isolate({input$indicator == "doc"}))
         
-        if(input$root_A != ""){
-            activeCpt_A(isolate(input$root_A))
-            rootCpt_A$id <- isolate(input$root_A)
-            rootCpt_A$list <- NULL
+        if(input$list_A){
+          activeCpt_A(NULL)
+          rootCpt_A$id <- NULL
+          rootCpt_A$list <- isolate(input$list_A)
+        } else if(input$root_A){
+          activeCpt_A(isolate(input$root_A))
+          rootCpt_A$id <- isolate(input$root_A)
+          rootCpt_A$list <- NULL
         } else {
-            activeCpt_A(NULL)
-            rootCpt_A$id <- NULL
-            rootCpt_A$list <- isolate(input$list_A)
+          showModal(modalDialog(
+            title = NULL,
+            config$LABELS$MESSAGE_NO_INPUT,
+            easyClose = TRUE,
+            footer = NULL
+          ))
+          return()
         }
-        
-        if(input$root_B != ""){
-            activeCpt_B(isolate(input$root_B))
-            rootCpt_B$id <- isolate(input$root_B)
-            rootCpt_B$list <- NULL
+
+        if(input$list_B){
+          activeCpt_B(NULL)
+          rootCpt_B$list <- NULL
+          rootCpt_B$list <- isolate(input$list_B)
+        }else if(input$root_B){
+          activeCpt_B(isolate(input$root_B))
+          rootCpt_B$id <- isolate(input$root_B)
+          rootCpt_B$list <- NULL
         } else {
-            activeCpt_B(NULL)
-            rootCpt_B$list <- NULL
-            rootCpt_B$list <- isolate(input$list_B)
+          showModal(modalDialog(
+            title = NULL,
+            config$LABELS$MESSAGE_NO_INPUT,
+            easyClose = TRUE,
+            footer = NULL
+          ))
+          return()
         }
         
         rootCpt_A$cpt <- isolate(input$cpt_A)
