@@ -45,7 +45,9 @@ shinyServer(function(input, output, session){
     use_doc <- reactiveVal()
     activeCpt_A <- reactiveVal()
     activeCpt_B <- reactiveVal()
-    
+    request_api <- reactiveVal()
+    request_api(NULL)
+
     observeEvent(input$process,{
         A <- input$root_A != "" | length(input$list_A) > 0
         B <- input$root_B != "" | length(input$list_B) > 0
@@ -104,6 +106,10 @@ shinyServer(function(input, output, session){
             source = isolate({input$source}),
             qps = isolate({input$qps})
         ) %>% response_data()
+        
+        temp <- get_request_api_url()
+        print(temp)
+        request_api(temp)
         
         enable("process")
         enable("path_A")
@@ -290,7 +296,16 @@ shinyServer(function(input, output, session){
       tagList(tags$h2(config$LABELS$RESULT_TITLE),
               tags$p(config$LABELS$RESULT_INTRO))
     })
-    
+
+    output$source_url <- renderUI({
+      req(request_api())
+      tagList(
+        tags$p("Data source :",
+                tags$a(href=request_api(), "api url request")
+        )
+      )
+    })
+
     ###--- PATH A ---###
     output$UI_path_A <- renderUI({
         req(activeCpt_A())
@@ -380,7 +395,6 @@ shinyServer(function(input, output, session){
             qps = isolate({input$qps})
         )
         
-        
         if(nrow(formated)){
             
             formated %>% response_data()
@@ -464,7 +478,6 @@ shinyServer(function(input, output, session){
             source = isolate({input$source}),
             qps = isolate({input$qps})
         )
-        
         
         if(nrow(formated)){
             

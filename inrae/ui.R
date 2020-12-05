@@ -190,5 +190,6 @@ shinyUI(bootstrapPage(
         sankeyNetworkOutput("relationB", width = "50%")
     ),
 
+    uiOutput("source_url"),
     DT::dataTableOutput("response")
 ))

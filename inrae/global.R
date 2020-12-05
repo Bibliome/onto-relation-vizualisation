@@ -48,7 +48,7 @@ names(choices_source) <- c(config$LABELS$SOURCE_PUBMED,
                             config$LABELS$SOURCE_GENBANK)
 
 DEBUG <<- FALSE
-
+request_api_url <<- NULL
 
 ############################# FUNCTIONS ################################
 
@@ -88,7 +88,7 @@ get_entity <- function(id){
   #' :return: (list) id, name, path, type, children
   
   taxon <- FALSE
-  base <- "http://migale.jouy.inra.fr/florilege-api/api/get/"
+  base <- paste0(config$PARAMETERS$API_HOST, "/get/")
   data <- list(
     id = id,
     name = id,
@@ -184,7 +184,7 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   names(taxid) <- rep("taxid", length(taxid))
   names(obtid) <- rep("obtid", length(obtid))
   
-  main <- "http://migale.jouy.inra.fr/florilege-api-dev/api/search/relations"
+  main <- paste0(config$PARAMETERS$API_HOST, "/search/relations")
   query <- c(
     taxid,
     obtid,
@@ -196,7 +196,8 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   )
   
   request <- GET(url = main, query = query)
-  print("request URL")
+  request_api_url <- request$url
+  print("request")
   print(request)
 
   response <- FALSE
@@ -231,7 +232,10 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   return(data)
 }
 
-
+get_request_api_url <- function(){
+  output <- request_api_url
+  return(output) 
+}
 
 get_join_relations <- function(leftType, leftId, rightType, rightId, join, source = '', qps = FALSE){
   #' Pull in Florilege's join relations
@@ -245,7 +249,7 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
   names(leftId) <- rep("left-root", length(leftId))
   names(rightId) <- rep("right-root", length(rightId))
 
-  main <- "http://migale.jouy.inra.fr/florilege-api-dev/api/search/join-relations"
+  main <- paste0(config$PARAMETERS$API_HOST, "/search/join-relations")
   query <- c(
     leftId,
     rightId,
@@ -260,9 +264,10 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
   )
 
   request <- GET(url = main, query = query)
-  print("request URL")
+  request_api_url <- request$url
+  print("request")
   print(request)
-  
+
   response <- FALSE
   data <- tibble(
     leftType = character(),
