@@ -204,6 +204,8 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   data <- tibble(
     taxid = character(),
     obtid = character(),
+    taxroot = character(),
+    obtroot = character(),
     type = character(),
     source = character(),
     taxon_forms = list(),
@@ -351,9 +353,15 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
   ) 
   
   if(is_tibble(request) && nrow(request)){
+    #We select rightId instead of rightRoot because there is a confusion in the API
+    #When this bug is fixed, use the commented in lines
     request <- request %>%
-      select(leftType, leftId, rightType, rightId, joinType, joinId, leftDocs, rightDocs)
-  
+#      select(leftType, leftRoot, rightType, rightRoot, joinType, joinId, leftDocs, rightDocs) %>%
+#       rename(leftId = leftRoot) %>%
+#       rename(rightId = rightRoot)
+      select(leftType, leftRoot, rightType, rightId, joinType, joinId, leftDocs, rightDocs) %>%
+      rename(leftId = leftRoot)
+    
     request <- request %>% 
       {
         if(doc){
@@ -579,7 +587,7 @@ plot_diagram <- function(formated, doc = T){
       IDsource = match(source, nodes$id) - 1,
       IDtarget = match(target, nodes$id) - 1
     ) %>% as.data.frame
-    
+
     type_color <- paste0(" d3.scaleOrdinal() 
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
     .range([",
