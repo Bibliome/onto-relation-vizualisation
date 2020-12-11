@@ -353,15 +353,11 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
   ) 
   
   if(is_tibble(request) && nrow(request)){
-    #We select rightId instead of rightRoot because there is a confusion in the API
-    #When this bug is fixed, use the commented in lines
     request <- request %>%
-#      select(leftType, leftRoot, rightType, rightRoot, joinType, joinId, leftDocs, rightDocs) %>%
-#       rename(leftId = leftRoot) %>%
-#       rename(rightId = rightRoot)
-      select(leftType, leftRoot, rightType, rightId, joinType, joinId, leftDocs, rightDocs) %>%
-      rename(leftId = leftRoot)
-    
+     select(leftType, leftRoot, rightType, rightRoot, joinType, joinId, leftDocs, rightDocs) %>%
+      rename(leftId = leftRoot) %>%
+      rename(rightId = rightRoot)
+
     request <- request %>% 
       {
         if(doc){
@@ -499,7 +495,7 @@ plot_diagram <- function(formated, doc = T){
   #' formated: (tibble) cpt_A, id_A, cpt_B, id_B, /join, value*
   #' doc: (bool)
   #' :return: (networkD3) sankey plot w/ Shiny input
-  
+
   indirect <- "id_join"%in%names(formated)
   if(indirect){
     formated <- formated %>% 
@@ -507,7 +503,7 @@ plot_diagram <- function(formated, doc = T){
       summarise(value = sum(value)) %>%
       ungroup
     }
-  
+
   nodes <- tibble(
     id = c(formated$id_A, formated$id_B),
     posX = c(rep(0, nrow(formated)), rep(1, nrow(formated))),
@@ -526,12 +522,17 @@ plot_diagram <- function(formated, doc = T){
     IDtarget = match(target, nodes$id) - 1
   ) %>% as.data.frame
   
-  
-  type_color <- " d3.scaleOrdinal() 
+  type_color <- paste(" d3.scaleOrdinal()
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
-    .range(['#69b3a2', 'steelblue', '#242654', '#5cf1bb'])
-  "
-  
+    .range(['",
+                      paste(
+                        config$PARAMETERS$COLOR_TAXON,
+                        config$PARAMETERS$COLOR_HABITAT,
+                        config$PARAMETERS$COLOR_PHENOTYPE,
+                        config$PARAMETERS$COLOR_USE,
+                        sep="', '"),
+                      "'])", sep="")
+
   sankey <- sankeyNetwork(
     Links = edges, Nodes = nodes,
     Source = "IDsource", Target = "IDtarget", Value = "value",
@@ -578,7 +579,7 @@ plot_diagram <- function(formated, doc = T){
       mutate(
         names = get_property(id, as.character(group), "name")
       ) %>% as.data.frame
-    
+
     edges <- tibble(
       source = if(isA) formated$id else formated$id_join,
       target = if(isA) formated$id_join else formated$id,
@@ -588,15 +589,17 @@ plot_diagram <- function(formated, doc = T){
       IDtarget = match(target, nodes$id) - 1
     ) %>% as.data.frame
 
-    type_color <- paste0(" d3.scaleOrdinal() 
+    type_color <- paste(" d3.scaleOrdinal()
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
-    .range([",
-      config$PARAMETERS$COLOR_TAXON,
-      config$PARAMETERS$COLOR_HABITAT,
-      config$PARAMETERS$COLOR_PHENOTYPE,
-      config$PARAMETERS$COLOR_USE,
-      "])")
-      
+    .range(['",
+                        paste(
+                          config$PARAMETERS$COLOR_TAXON,
+                          config$PARAMETERS$COLOR_HABITAT,
+                          config$PARAMETERS$COLOR_PHENOTYPE,
+                          config$PARAMETERS$COLOR_USE,
+                          sep="', '"),
+                        "'])", sep="")
+
     sankey <- sankeyNetwork(
       Links = edges, Nodes = nodes,
       Source = "IDsource", Target = "IDtarget", Value = "value",

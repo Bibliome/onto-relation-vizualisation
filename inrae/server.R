@@ -43,6 +43,7 @@ shinyServer(function(input, output, session){
     rootCpt_B <- reactiveValues(pos = '2')
     rootJoin <- reactiveValues()
     use_doc <- reactiveVal()
+    use_second <- reactiveVal()
     activeCpt_A <- reactiveVal()
     activeCpt_B <- reactiveVal()
     request_api <- reactiveVal()
@@ -68,7 +69,8 @@ shinyServer(function(input, output, session){
         response_data(NULL)
         
         use_doc(isolate({input$indicator == "doc"}))
-        
+        use_second(isolate({input$second_rel == TRUE}))
+
         disable("process")
         disable("path_A")
         disable("path_B")
@@ -108,9 +110,7 @@ shinyServer(function(input, output, session){
         ) %>% response_data()
         
         temp <- get_request_api_url()
-        print(temp)
-        request_api(temp)
-        
+
         enable("process")
         enable("path_A")
         enable("path_B")
@@ -133,7 +133,7 @@ shinyServer(function(input, output, session){
         print(paste(nrow(data), "relations."))
         
         
-        if(indirect && input$second_rel){
+        if(indirect && use_second()){
             data <- data %>%
                 mutate(
                   name_A = get_property(id_A, cpt_A, "name"),
@@ -234,7 +234,7 @@ shinyServer(function(input, output, session){
         req(threshold(), threshold_join())
         data <- response_data()
         if (threshold() < as.numeric(config$PARAMETERS$THRESHOLD) &&
-            (threshold_join() < as.numeric(config$PARAMETERS$THRESHOLD) || !input$second_rel ) ){
+            (threshold_join() < as.numeric(config$PARAMETERS$THRESHOLD) || !use_second() ) ){
             updateCheckboxInput(session, "threshold_checkbox", value = FALSE)
             plot_data(data)
         } else {
@@ -257,7 +257,6 @@ shinyServer(function(input, output, session){
     
     observeEvent(input$reload,{
         req(response_data())
-        print("update input")
         limits <- input$threshold_slide
         response_data() %>% 
             filter(between(value, limits[1]+1, limits[2])) %>% 
@@ -280,13 +279,13 @@ shinyServer(function(input, output, session){
     })
     
     output$relationA <- renderSankeyNetwork({
-        req(indirect(), plot_data(), req(input$second_rel))
+        req(indirect(), plot_data(), req(use_second()))
         req(nrow(plot_data()) > 0)
         part_diagram(plot_data(), "A")
     })
     
     output$relationB <- renderSankeyNetwork({
-        req(indirect(), plot_data(), req(input$second_rel))
+        req(indirect(), plot_data(), req(use_second()))
         req(nrow(plot_data()) > 0)
         part_diagram(plot_data(), "B")
     })
@@ -363,6 +362,8 @@ shinyServer(function(input, output, session){
         hide("relationDiagram")
 
         use_doc(isolate({input$indicator == "doc"}))
+        use_second(isolate({input$second_rel == TRUE}))
+        
         node <- isolate(input$nodeID)
         #node: id, cpt, posX
         
@@ -442,7 +443,8 @@ shinyServer(function(input, output, session){
         hide("relationDiagram")
 
         use_doc(isolate({input$indicator == "doc"}))
-
+        use_second(isolate({input$second_rel == TRUE}))
+        
         clicked <- c()
         for (inputs in list(c(input$path_A, activeCpt_A()), c(input$path_B, activeCpt_B()))){
             clicked <- c(clicked, inputs[1] != inputs[2])
@@ -515,6 +517,8 @@ shinyServer(function(input, output, session){
         req(is.null(activeCpt_A()), is.null(activeCpt_B()))
         
         query <- parseQueryString(session$clientData$url_search)
+
+        req(length(query) != 0)
         cpt_A <- query$cptA
         root_A <- query$rootA
         list_A <- query$listA
@@ -525,22 +529,35 @@ shinyServer(function(input, output, session){
         source <- query$source
         qps <- query$qps
         indicator <- query$indicator
-        
-        
+
         A <- length(c(root_A, list_A)) > 0
         B <- length(c(root_B, list_B)) > 0
-        
+                
         req(cpt_A, cpt_B, A, B)
-        updateSelectInput(session, inputId = "cpt_A", selected = cpt_A)
-        updateSelectInput(session, inputId = "cpt_B", selected = cpt_B)
-        updateSelectizeInput(
-            session, 'root_A', server = TRUE, selected = root_A,
-            choices = concept[[cpt_A]]$id %>% unname
-        )
-        updateSelectizeInput(
-            session, 'root_B', server = TRUE, selected = root_B,
-            choices = concept[[cpt_B]]$id %>% unname
-        )
+        
+        A <- root_A != "" | length(list_A) > 0
+        B <- root_B != "" | length(list_B) > 0
+
+        if(!A | !B){
+          showModal(modalDialog(
+            title = NULL,
+            config$LABELS$MESSAGE_NO_INPUT,
+            easyClose = TRUE,
+            footer = NULL
+          ))
+          return()
+        }
+
+        # updateSelectInput(session, inputId = "cpt_A", selected = cpt_A)
+        # updateSelectInput(session, inputId = "cpt_B", selected = cpt_B)
+        # updateSelectizeInput(
+        #     session, 'root_A', server = TRUE, selected = root_A,
+        #     choices = concept[[cpt_A]]$id %>% unname
+        # )
+        # updateSelectizeInput(
+        #     session, 'root_B', server = TRUE, selected = root_B,
+        #     choices = concept[[cpt_B]]$id %>% unname
+        # )
         
         if(is.valid(list_A)){
             updateSelectizeInput(
@@ -582,9 +599,6 @@ shinyServer(function(input, output, session){
                 session, 'cpt_join', selected = indicator
             )
         }
-        
-        req(input$root_A, input$root_B, input$indicator)
-        
         p_generate <- Progress$new()
         p_generate$set(value = 0.5, message = config$LABELS$MESSAGE_LOADING)
 
@@ -594,32 +608,25 @@ shinyServer(function(input, output, session){
         response_data(NULL)
         
         use_doc(isolate({input$indicator == "doc"}))
+        use_second(isolate({input$second_rel == TRUE}))
         
-        if(input$list_A){
+        if(length(input$list_A) > 0){
           activeCpt_A(NULL)
           rootCpt_A$id <- NULL
-          rootCpt_A$list <- isolate(input$list_A)
-        } else if(input$root_A){
-          activeCpt_A(isolate(input$root_A))
-          rootCpt_A$id <- isolate(input$root_A)
+          rootCpt_A$list <- isolate(list_A)
+        } else if(input$root_A != ""){
+          activeCpt_A(isolate(root_A))
+          rootCpt_A$id <- isolate(root_A)
           rootCpt_A$list <- NULL
-        } else {
-          showModal(modalDialog(
-            title = NULL,
-            config$LABELS$MESSAGE_NO_INPUT,
-            easyClose = TRUE,
-            footer = NULL
-          ))
-          return()
         }
 
-        if(input$list_B){
+        if(length(input$list_B) > 0){
           activeCpt_B(NULL)
           rootCpt_B$list <- NULL
-          rootCpt_B$list <- isolate(input$list_B)
-        }else if(input$root_B){
-          activeCpt_B(isolate(input$root_B))
-          rootCpt_B$id <- isolate(input$root_B)
+          rootCpt_B$list <- isolate(list_B)
+        }else if(input$root_B != ""){
+          activeCpt_B(isolate(root_B))
+          rootCpt_B$id <- isolate(root_B)
           rootCpt_B$list <- NULL
         } else {
           showModal(modalDialog(
@@ -635,15 +642,15 @@ shinyServer(function(input, output, session){
         rootCpt_B$cpt <- isolate(input$cpt_B)
         rootJoin$cpt <- isolate(input$cpt_join)
         
-        filterQuery(list(
-            reactiveValuesToList(rootCpt_A),
-            reactiveValuesToList(rootCpt_B),
-            reactiveValuesToList(rootJoin)
-            ),
-            doc = use_doc(),
-            source = isolate({input$source}),
-            qps = isolate({input$qps})
-        ) %>% response_data()
+        # filterQuery(list(
+        #     reactiveValuesToList(rootCpt_A),
+        #     reactiveValuesToList(rootCpt_B),
+        #     reactiveValuesToList(rootJoin)
+        #     ),
+        #     doc = use_doc(),
+        #     source = isolate({input$source}),
+        #     qps = isolate({input$qps})
+        # ) %>% response_data()
         
         enable("process")
         enable("path_A")
