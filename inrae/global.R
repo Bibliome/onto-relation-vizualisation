@@ -10,18 +10,18 @@ suppressMessages(library(ini))
 
 ############################## APPENDIX ################################
 
-source("scripts/appendix.R")
+source("inra/scripts/appendix.R")
 
 ############################# VARIABLES ################################
 
 concept <<- list(
-  habitat = get_ontology("../data/BioNLP-OST+EnovFood-Habitat.obo"),
-  phenotype = get_ontology("../data/BioNLP-OST+EnovFood-Phenotype.obo"),
-  use = get_ontology("../data/Use_V2.obo"),
-  taxon = get_ontology("../data/microorganisms.obo")
+  habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
+  phenotype = get_ontology("data/BioNLP-OST+EnovFood-Phenotype.obo"),
+  use = get_ontology("data/Use_V2.obo"),
+  taxon = get_ontology("data/microorganisms.obo")
 )
 
-config <- read.ini("conf.ini")
+config <- read.ini("inra/conf.ini")
 
 concept_choices <- concept %>%
   lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))])
