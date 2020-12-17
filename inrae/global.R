@@ -10,7 +10,7 @@ suppressMessages(library(ini))
 
 ############################## APPENDIX ################################
 
-source("inra/scripts/appendix.R")
+source("inrae/scripts/appendix.R")
 
 ############################# VARIABLES ################################
 
@@ -21,7 +21,7 @@ concept <<- list(
   taxon = get_ontology("data/microorganisms.obo")
 )
 
-config <- read.ini("inra/conf.ini")
+config <- read.ini("inrae/conf.ini")
 
 concept_choices <- concept %>%
   lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))])
