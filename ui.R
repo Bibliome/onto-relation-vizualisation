@@ -189,5 +189,7 @@ shinyUI(bootstrapPage(
         id = "secondPanel", class = "panel",
         sankeyNetworkOutput("relationA", width = "50%"),
         sankeyNetworkOutput("relationB", width = "50%")
-    )
+    ),
+    
+    theme = "styles.css"
 ))
