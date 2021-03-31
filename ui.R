@@ -10,7 +10,10 @@ suppressMessages(library(tidyverse))
 
 source("help-ui.R", local = TRUE)
 
-shinyUI(basicPage(    
+shinyUI(bootstrapPage(
+    theme = "styles.css",
+    useShinyjs(),
+    
     #------------------------ SEARCH PANEL ----------------------------#
     div(
         id = "searchPanel", class = "panel",
@@ -189,5 +192,6 @@ shinyUI(basicPage(
         sankeyNetworkOutput("relationB", width = "50%")
     ),
     
-    theme = "styles.css"
+    uiOutput("source_url"),
+    DT::dataTableOutput("response")
 ))
