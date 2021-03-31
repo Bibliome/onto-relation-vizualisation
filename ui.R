@@ -10,9 +10,7 @@ suppressMessages(library(tidyverse))
 
 source("help-ui.R", local = TRUE)
 
-shinyUI(bootstrapPage(
-    useShinyjs(),
-    
+shinyUI(basicPage(    
     #------------------------ SEARCH PANEL ----------------------------#
     div(
         id = "searchPanel", class = "panel",
