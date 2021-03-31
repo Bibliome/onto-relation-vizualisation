@@ -189,10 +189,5 @@ shinyUI(bootstrapPage(
         id = "secondPanel", class = "panel",
         sankeyNetworkOutput("relationA", width = "50%"),
         sankeyNetworkOutput("relationB", width = "50%")
-    ),
-
-    uiOutput("source_url"),
-    DT::dataTableOutput("response"),
-    title = "Onto Relation Visualizer",
-    theme = "styles.css"
+    )
 ))
