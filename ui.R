@@ -9,10 +9,6 @@ suppressMessages(library(tidyverse))
 ################################# UI ###################################
 
 shinyUI(bootstrapPage(
-    theme = "styles.css",
-    useShinyjs(),
+     theme = "styles.css",
      "Hello, world!!!"
-    
-    uiOutput("source_url"),
-    DT::dataTableOutput("response")
 ))
