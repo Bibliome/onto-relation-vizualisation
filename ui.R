@@ -8,8 +8,6 @@ suppressMessages(library(tidyverse))
 
 ################################# UI ###################################
 
-source("help-ui.R", local = TRUE)
-
 shinyUI(bootstrapPage(
     theme = "styles.css",
     useShinyjs(),
