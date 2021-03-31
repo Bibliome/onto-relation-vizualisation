@@ -11,7 +11,6 @@ suppressMessages(library(tidyverse))
 source("help-ui.R", local = TRUE)
 
 shinyUI(bootstrapPage(
-    theme = "styles.css",
     useShinyjs(),
     
     #------------------------ SEARCH PANEL ----------------------------#
@@ -193,5 +192,7 @@ shinyUI(bootstrapPage(
     ),
 
     uiOutput("source_url"),
-    DT::dataTableOutput("response")
+    DT::dataTableOutput("response"),
+    title = "Onto Relation Visualizer",
+    theme = "styles.css"
 ))
