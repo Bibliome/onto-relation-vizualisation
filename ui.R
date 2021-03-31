@@ -1,10 +1,10 @@
 ############################# LIBRARIES ################################
 
-suppressMessages(library(sankeyD3))
-suppressMessages(library(shiny))
-suppressMessages(library(shinyjs))
-suppressMessages(library(shinyWidgets))
-suppressMessages(library(tidyverse))
+library(sankeyD3)
+library(shiny)
+library(shinyjs)
+library(shinyWidgets)
+library(tidyverse)
 
 ################################# UI ###################################
 
