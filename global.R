@@ -1,11 +1,11 @@
 ############################# LIBRARIES ################################
 
-suppressMessages(library(htmlwidgets))
-suppressMessages(library(httr))
-suppressMessages(library(jsonlite))
-suppressMessages(library(tidyverse))
-suppressMessages(library(ontologyIndex))
-suppressMessages(library(ini))
+library(htmlwidgets)
+library(httr)
+library(jsonlite)
+library(tidyverse)
+library(ontologyIndex)
+library(ini)
 
 ############################## APPENDIX ################################
 
