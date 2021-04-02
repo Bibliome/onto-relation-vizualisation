@@ -7,7 +7,6 @@ library(tidyverse)
 library(ontologyIndex)
 library(ini)
 library(promises)
-library(future)
 plan(multiprocess)
 ############################## APPENDIX ################################
 
