@@ -5,7 +5,6 @@ library(shinyjs)
 library(shinyWidgets)
 library(tidyverse)
 library(DT)
-library(sankeyD3)
 
 ############################## SERVER ##################################
 
