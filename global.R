@@ -5,7 +5,6 @@ suppressMessages(library(httr))
 suppressMessages(library(jsonlite))
 suppressMessages(library(tidyverse))
 suppressMessages(library(ontologyIndex))
-suppressMessages(library(sankeyD3))
 suppressMessages(library(ini))
 
 ############################## APPENDIX ################################
