@@ -8,13 +8,13 @@ library(ontologyIndex)
 library(ini)
 library(promises)
 library(future)
-
+plan(multiprocess)
 ############################## APPENDIX ################################
 
 source("scripts/appendix.R")
 
 ############################# VARIABLES ################################
-paln(multiprocess)
+
 
 concept <<- future(list(
   habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
