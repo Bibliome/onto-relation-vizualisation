@@ -16,7 +16,7 @@ source("scripts/appendix.R")
 ############################# VARIABLES ################################
 
 
-concept <<- future(list(
+concept <<- future_promise(list(
   habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
   phenotype = get_ontology("data/BioNLP-OST+EnovFood-Phenotype.obo"),
   use = get_ontology("data/Use_V2.obo"),
