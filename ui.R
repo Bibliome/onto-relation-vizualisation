@@ -5,7 +5,7 @@ library(shiny)
 library(shinyjs)
 library(shinyWidgets)
 library(tidyverse)
-library(sankeyD3)
+
 
 ################################# UI ###################################
 
