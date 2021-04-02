@@ -31,10 +31,11 @@ concept <<- future(list(
 
 
 concept_choices <- concept %...>%
-  future(lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))]))
+  future(lapply(function(x) x$name %...>% invert %...>% .[order(nchar(names(.)))]))
 
                 
 config <- read.ini("conf.ini")
+                
 ontobiotope <<- c("habitat", "phenotype", "use")
 
 choices_type <- c("taxon", "habitat", "phenotype", "use")
@@ -119,7 +120,7 @@ get_entity <- function(id){
   response <- FALSE
   
   if(request$status_code == 200){
-    response <- request %>% 
+    response <- request %...>% 
       content(as = "text", encoding = "utf-8")
     response <- response != "[]"
   } else {
@@ -127,12 +128,12 @@ get_entity <- function(id){
   }
   
   if(response){
-    data <- request %>% 
-      content(as = "text", encoding = "utf-8") %>% 
+    data <- request %...>% 
+      content(as = "text", encoding = "utf-8") %...>% 
       fromJSON
     
-    data$path <- data$path[1] %>% 
-      str_split("/") %>% unlist
+    data$path <- data$path[1] %...>% 
+      str_split("/") %...>% unlist
 
     if(taxon){
       data$type <- "taxon"
@@ -161,14 +162,14 @@ get_luca <- function(type, terms){
   #' :return: (str) LUCA
   
   luca <- concept[[type]]$id[1]
-  ancestors <- terms %>% lapply(get_property, type = type, property = "ancestors")
-  short <- ancestors %>% sapply(length) %>% min
+  ancestors <- terms %...>% lapply(get_property, type = type, property = "ancestors")
+  short <- ancestors %...>% sapply(length) %...>% min
   
   if(short > 1){
-    common <- ancestors %>% 
-      sapply(function(x) x[1:short]) %>% 
-      apply(1, function(x) length(unique(x))-1) %>% 
-      as.logical %>% which
+    common <- ancestors %...>% 
+      sapply(function(x) x[1:short]) %...>% 
+      apply(1, function(x) length(unique(x))-1) %...>% 
+      as.logical %...>% which
     common <- ifelse(length(common), min(common)-1, short)
     luca <- ancestors[[1]][common]
   }
@@ -223,11 +224,11 @@ get_relations <- function(taxid = NULL, obtid = NULL, type = NULL, source = '', 
   )
 
   if(request$status_code == 200){
-    response <- request %>% 
+    response <- request %...>% 
       content(as = "text", encoding = "utf-8")
     
-    data <- response %>% 
-      fromJSON %>% as_tibble
+    data <- response %...>% 
+      fromJSON %...>% as_tibble
     
     if( (response != "[]") && DEBUG ){
       cat(paste(
@@ -296,11 +297,11 @@ get_join_relations <- function(leftType, leftId, rightType, rightId, join, sourc
   )
 
   if(request$status_code == 200){
-    response <- request %>% 
+    response <- request %...>% 
       content(as = "text", encoding = "utf-8")
 
-    data <- response %>% 
-      fromJSON %>% as_tibble
+    data <- response %...>% 
+      fromJSON %...>% as_tibble
 
     if( (response != "[]") && DEBUG ){
       cat(paste(
@@ -327,20 +328,20 @@ aggregate_value <- function(taxid, obtid, type, source = '', qps = F, doc = T){
   request <- get_relations(taxid, obtid, type, source, qps)
   
   if(is_tibble(request) && nrow(request)){
-    request <- request %>%
-      select(taxroot, obtroot, type, docs) %>%
-      rename(taxid = taxroot) %>%
+    request <- request %...>%
+      select(taxroot, obtroot, type, docs) %...>%
+      rename(taxid = taxroot) %...>%
       rename(obtid = obtroot)
   
     if(doc){
-      request <- request %>%
+      request <- request %...>%
         mutate(value = lengths(docs))
     } else {
-      request <- request %>%
+      request <- request %...>%
         mutate(value = 1)
     }
-    request <- request %>%
-      group_by(taxid,obtid,type) %>%
+    request <- request %...>%
+      group_by(taxid,obtid,type) %...>%
       summarise(value = sum(value))
   }
   return(request)
@@ -362,12 +363,12 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
   ) 
   
   if(is_tibble(request) && nrow(request)){
-    request <- request %>%
-     select(leftType, leftRoot, rightType, rightRoot, joinType, joinId, leftDocs, rightDocs) %>%
-      rename(leftId = leftRoot) %>%
+    request <- request %...>%
+     select(leftType, leftRoot, rightType, rightRoot, joinType, joinId, leftDocs, rightDocs) %...>%
+      rename(leftId = leftRoot) %...>%
       rename(rightId = rightRoot)
 
-    request <- request %>% 
+    request <- request %...>% 
       {
         if(doc){
             mutate(
@@ -386,9 +387,9 @@ join_value <- function(leftType, leftId, rightType, rightId, jt, jid = NULL, sou
         }
       }
   
-    request <- request %>% 
-      select(-leftDocs, -rightDocs) %>%
-      group_by_all %>%
+    request <- request %...>% 
+      select(-leftDocs, -rightDocs) %...>%
+      group_by_all %...>%
       summarise(value = sum(value))
   }
   return(request)
@@ -428,7 +429,7 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       leftId = left$list,
       rightType = right$cpt,
       rightId = right$list
-    )) %>% mutate_all(as.character)
+    )) %...>% mutate_all(as.character)
     
     if(nrow(base)){
       formated <-join_value(
@@ -436,8 +437,8 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
         join$cpt, source = source, qps = qps, doc = doc
       )
     }else{
-      formated <- base %>% 
-        mutate(joinType = join$cpt) %>%
+      formated <- base %...>% 
+        mutate(joinType = join$cpt) %...>%
         mutate(
         .,
         leftValue = numeric(),
@@ -446,7 +447,7 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       )
     }
     if(is_tibble(formated) && nrow(formated)){
-      formated <- formated %>% select(
+      formated <- formated %...>% select(
       cpt_A = leftType, id_A = leftId, value_A = leftValue,
       cpt_join = joinType, id_join = joinId,
       cpt_B = rightType, id_B = rightId, value_B = rightValue,
@@ -463,7 +464,7 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
       taxid = taxon$list,
       obtid = obt$list,
       type = obt$cpt
-    )) %>% mutate_all(as.character)
+    )) %...>% mutate_all(as.character)
 
     if(nrow(base)){
       formated <- aggregate_value(
@@ -472,13 +473,13 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
         )
 
     }else{
-      formated <- base %>%
+      formated <- base %...>%
         mutate(., value = numeric())
     }
 
     if(is_tibble(formated) && nrow(formated)){
-      formated <-formated %>%
-        mutate(taxontype = "taxon") %>% {
+      formated <-formated %...>%
+        mutate(taxontype = "taxon") %...>% {
           if(leftTaxon){
             select(
               ., cpt_A = taxontype, id_A = taxid,
@@ -490,7 +491,7 @@ filterQuery <- function(inputs, source = '', qps = F, doc = F){
               cpt_B = taxontype, id_B = taxid, value
             )
           }
-        } %>% filter(value != 0)
+        } %...>% filter(value != 0)
     }
   }
 
@@ -507,9 +508,9 @@ plot_diagram <- function(formated, doc = T){
 
   indirect <- "id_join"%in%names(formated)
   if(indirect){
-    formated <- formated %>% 
-      group_by(cpt_A, id_A, cpt_B, id_B) %>%
-      summarise(value = sum(value)) %>%
+    formated <- formated %...>% 
+      group_by(cpt_A, id_A, cpt_B, id_B) %...>%
+      summarise(value = sum(value)) %...>%
       ungroup
     }
 
@@ -517,19 +518,19 @@ plot_diagram <- function(formated, doc = T){
     id = c(formated$id_A, formated$id_B),
     posX = c(rep(0, nrow(formated)), rep(1, nrow(formated))),
     group = as.factor(c(formated$cpt_A, formated$cpt_B))
-  ) %>% unique %>% rowwise %>% 
+  ) %...>% unique %...>% rowwise %...>% 
     mutate(
       names = get_property(id, as.character(group), "name")
-    ) %>% as.data.frame
+    ) %...>% as.data.frame
   
   edges <- tibble(
     source = formated$id_A, # IMPORTANT: define pos 0+1=1 of cpt
     target = formated$id_B, # IMPORTANT: define pos 1+1=2 of cpt
     value = formated$value
-  ) %>% mutate(
+  ) %...>% mutate(
     IDsource = match(source, nodes$id) - 1,
     IDtarget = match(target, nodes$id) - 1
-  ) %>% as.data.frame
+  ) %...>% as.data.frame
   
   type_color <- paste(" d3.scaleOrdinal()
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
@@ -573,10 +574,10 @@ plot_diagram <- function(formated, doc = T){
     
     isA <- direction == "A"
     
-    formated <- formated %>% 
-      select(ends_with(direction), ends_with("_join")) %>% 
-      select(cpt = 1, id = 2, value = 3, everything()) %>% 
-      group_by(cpt, id, cpt_join, id_join) %>% 
+    formated <- formated %...>% 
+      select(ends_with(direction), ends_with("_join")) %...>% 
+      select(cpt = 1, id = 2, value = 3, everything()) %...>% 
+      group_by(cpt, id, cpt_join, id_join) %...>% 
       summarise(value = sum(value))
     #    arrange(desc(id_join))
     
@@ -584,19 +585,19 @@ plot_diagram <- function(formated, doc = T){
       id = c(formated$id, formated$id_join),
       posX = c(rep(if(isA) 0 else 1, nrow(formated)), rep(if(isA) 1 else 0, nrow(formated))),
       group = as.factor(c(formated$cpt, formated$cpt_join))
-    ) %>% unique %>% rowwise %>% 
+    ) %...>% unique %...>% rowwise %...>% 
       mutate(
         names = get_property(id, as.character(group), "name")
-      ) %>% as.data.frame
+      ) %...>% as.data.frame
 
     edges <- tibble(
       source = if(isA) formated$id else formated$id_join,
       target = if(isA) formated$id_join else formated$id,
       value = formated$value
-    ) %>% mutate(
+    ) %...>% mutate(
       IDsource = match(source, nodes$id) - 1,
       IDtarget = match(target, nodes$id) - 1
-    ) %>% as.data.frame
+    ) %...>% as.data.frame
 
     type_color <- paste(" d3.scaleOrdinal()
     .domain(['taxon', 'habitat', 'phenotype', 'use'])
