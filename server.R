@@ -1,11 +1,11 @@
 ############################# LIBRARIES ################################
 
-suppressMessages(library(DT))
-suppressMessages(library(sankeyD3))
-suppressMessages(library(shiny))
-suppressMessages(library(shinyjs))
-suppressMessages(library(shinyWidgets))
-suppressMessages(library(tidyverse))
+library(shiny)
+library(shinyjs)
+library(shinyWidgets)
+library(tidyverse)
+library(DT)
+library(sankeyD3)
 
 ############################## SERVER ##################################
 
