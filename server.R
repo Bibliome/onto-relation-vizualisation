@@ -107,7 +107,7 @@ shinyServer(function(input, output, session){
             doc = use_doc(),
             source = isolate({input$source}),
             qps = isolate({input$qps})
-        ) %>% response_data()
+        ) %...>% response_data()
         
         temp <- get_request_api_url()
 
@@ -134,7 +134,7 @@ shinyServer(function(input, output, session){
         
         
         if(indirect && use_second()){
-            data <- data %>%
+            data <- data %...>%
                 mutate(
                   name_A = get_property(id_A, cpt_A, "name"),
                   name_B = get_property(id_B, cpt_B, "name"),
@@ -167,11 +167,11 @@ shinyServer(function(input, output, session){
                            config$LABELS$VALUE_SUM)
         }else{
           if(indirect){
-            data <- data %>% 
-              group_by(cpt_A, id_A, cpt_B, id_B) %>%
+            data <- data %...>% 
+              group_by(cpt_A, id_A, cpt_B, id_B) %...>%
               summarise(value = sum(value))
           }
-          data <- data %>%
+          data <- data %...>%
             mutate(
               name_A = get_property(id_A, cpt_A, "name"),
               name_B = get_property(id_B, cpt_B, "name")
@@ -212,8 +212,8 @@ shinyServer(function(input, output, session){
         data <- response_data()
         maxnode <- sapply(
             list(data$id_A, data$id_B),
-            function(x) unique(x) %>% length
-        ) %>% max
+            function(x) unique(x) %...>% length
+        ) %...>% max
         
         return(maxnode)
     })
@@ -223,8 +223,8 @@ shinyServer(function(input, output, session){
       data <- response_data()
       maxnode <- sapply(
         list(data$id_join),
-        function(x) unique(x) %>% length
-      ) %>% max
+        function(x) unique(x) %...>% length
+      ) %...>% max
       
       return(maxnode)
     })        
@@ -249,8 +249,8 @@ shinyServer(function(input, output, session){
                 value = c(median(limits), limits[2])
             )
             
-            response_data() %>% 
-                filter(between(value, median(limits), limits[2])) %>% 
+            response_data() %...>% 
+                filter(between(value, median(limits), limits[2])) %...>% 
                 plot_data()
         }
     })
@@ -258,8 +258,8 @@ shinyServer(function(input, output, session){
     observeEvent(input$reload,{
         req(response_data())
         limits <- input$threshold_slide
-        response_data() %>% 
-            filter(between(value, limits[1]+1, limits[2])) %>% 
+        response_data() %...>% 
+            filter(between(value, limits[1]+1, limits[2])) %...>% 
             plot_data()
     })
     
@@ -308,9 +308,9 @@ shinyServer(function(input, output, session){
     ###--- PATH A ---###
     output$UI_path_A <- renderUI({
         req(activeCpt_A())
-        path <- get_entity(activeCpt_A())$path %>% 
-            sapply(function(x) get_entity(x)$name) %>% 
-            invert# %>% tail(3) # 3 ancètres au plus
+        path <- get_entity(activeCpt_A())$path %...>% 
+            sapply(function(x) get_entity(x)$name) %...>% 
+            invert# %...>% tail(3) # 3 ancètres au plus
         
         radioGroupButtons(
             inputId = "path_A",
@@ -324,9 +324,9 @@ shinyServer(function(input, output, session){
     ###--- PATH B ---###
     output$UI_path_B <- renderUI({
         req(activeCpt_B())
-        path <- get_entity(activeCpt_B())$path %>% 
-            sapply(function(x) get_entity(x)$name) %>%
-            invert# %>% tail(3) # 3 ancètres au plus
+        path <- get_entity(activeCpt_B())$path %...>% 
+            sapply(function(x) get_entity(x)$name) %...>%
+            invert# %...>% tail(3) # 3 ancètres au plus
         
         radioGroupButtons(
             inputId = "path_B",
@@ -398,7 +398,7 @@ shinyServer(function(input, output, session){
         
         if(nrow(formated)){
             
-            formated %>% response_data()
+            formated %...>% response_data()
             
             if(node[3] == rootCpt_A$pos){
                 activeCpt_A(node[1])
@@ -483,7 +483,7 @@ shinyServer(function(input, output, session){
         
         if(nrow(formated)){
             
-            formated %>% response_data()
+            formated %...>% response_data()
             
             if(which(clicked) == rootCpt_A$pos){ # pos "1"
                 activeCpt_A(node)
@@ -552,26 +552,26 @@ shinyServer(function(input, output, session){
         # updateSelectInput(session, inputId = "cpt_B", selected = cpt_B)
         # updateSelectizeInput(
         #     session, 'root_A', server = TRUE, selected = root_A,
-        #     choices = concept[[cpt_A]]$id %>% unname
+        #     choices = concept[[cpt_A]]$id %...>% unname
         # )
         # updateSelectizeInput(
         #     session, 'root_B', server = TRUE, selected = root_B,
-        #     choices = concept[[cpt_B]]$id %>% unname
+        #     choices = concept[[cpt_B]]$id %...>% unname
         # )
         
         if(is.valid(list_A)){
             updateSelectizeInput(
                 session, 'list_A', server = TRUE,
-                selected = list_A %>% strsplit(',') %>% .[[1]],
-                choices = concept[[input$cpt_A]]$name %>% invert
+                selected = list_A %...>% strsplit(',') %...>% .[[1]],
+                choices = concept[[input$cpt_A]]$name %...>% invert
             )
         }
         
         if(is.valid(list_B)){
             updateSelectizeInput(
                 session, 'list_B', server = TRUE,
-                selected = list_B %>% strsplit(',') %>% .[[1]],
-                choices = concept[[input$cpt_B]]$name %>% invert
+                selected = list_B %...>% strsplit(',') %...>% .[[1]],
+                choices = concept[[input$cpt_B]]$name %...>% invert
             )
         }
         
@@ -650,7 +650,7 @@ shinyServer(function(input, output, session){
         #     doc = use_doc(),
         #     source = isolate({input$source}),
         #     qps = isolate({input$qps})
-        # ) %>% response_data()
+        # ) %...>% response_data()
         
         enable("process")
         enable("path_A")
