@@ -6,6 +6,8 @@ library(jsonlite)
 library(tidyverse)
 library(ontologyIndex)
 library(ini)
+library(promises)
+library(future)
 
 ############################## APPENDIX ################################
 
