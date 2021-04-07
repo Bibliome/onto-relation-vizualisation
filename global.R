@@ -17,20 +17,18 @@ source("scripts/appendix.R")
 
 ############################# VARIABLES ################################
 
-concept <<- future(list(
+concept <<- list(
   habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
   phenotype = get_ontology("data/BioNLP-OST+EnovFood-Phenotype.obo"),
   use = get_ontology("data/Use_V2.obo"),
   taxon = get_ontology("data/microorganisms.obo")
-))
+)
 
-
-
-concept_choices <- concept %...>%
-  future(lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))]))
-
-                
 config <- read.ini("conf.ini")
+
+concept_choices <- concept %>%
+  lapply(function(x) x$name %>% invert %>% .[order(nchar(names(.)))])
+
 ontobiotope <<- c("habitat", "phenotype", "use")
 
 choices_type <- c("taxon", "habitat", "phenotype", "use")
