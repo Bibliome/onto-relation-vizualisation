@@ -16,16 +16,12 @@ plan(multisession)
 source("scripts/appendix.R")
 
 ############################# VARIABLES ################################
-habitat_path <-"data/BioNLP-OST+EnovFood-Habitat.obo"
-phenotype_path <-"data/BioNLP-OST+EnovFood-Habitat.obo"
-use_path <-"data/BioNLP-OST+EnovFood-Habitat.obo"
-taxon_path <-"data/BioNLP-OST+EnovFood-Habitat.obo"
 
 concept <<- future(list(
-  habitat = get_ontology(habitat_path),
-  phenotype = get_ontology(phenotype_path),
-  use = get_ontology(use_path),
-  taxon = get_ontology(taxon_path)
+  habitat = get_ontology("data/BioNLP-OST+EnovFood-Habitat.obo"),
+  phenotype = get_ontology("data/BioNLP-OST+EnovFood-Phenotype.obo"),
+  use = get_ontology("data/Use_V2.obo"),
+  taxon = get_ontology("data/microorganisms.obo")
 ))
 
 
