@@ -7,10 +7,7 @@ suppressMessages(library(tidyverse))
 suppressMessages(library(ontologyIndex))
 suppressMessages(library(sankeyD3))
 suppressMessages(library(ini))
-suppressMessages(library(promises))
-suppressMessages(library(future))
 
-plan(multisession)
 ############################## APPENDIX ################################
 
 source("scripts/appendix.R")
